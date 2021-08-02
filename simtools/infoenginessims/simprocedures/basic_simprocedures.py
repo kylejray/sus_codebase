@@ -1,4 +1,4 @@
-from numpy import empty, s_, histogramdd, mean, shape
+from numpy import empty, s_, histogramdd, mean, shape, array
 from scipy.stats import sem
 
 
@@ -114,10 +114,11 @@ class MeasureStepValue(SimProcedure):
     indexing), slices, and numpy index expressions.
     """
 
-    def __init__(self, get_value, output_name='all_value', step_request=s_[:]):
+    def __init__(self, get_value, output_name='all_value', step_request=s_[:], trial_request=s_[:]):
         self.get_val = get_value
         self.output_name = output_name
         self.step_request = step_request
+        self.trial_request = trial_request
         
 
 
@@ -125,7 +126,7 @@ class MeasureStepValue(SimProcedure):
 
         self.simulation = simulation
 
-        initial_val = self.get_val(self.simulation)
+        initial_val = self.get_val(self.simulation, self.trial_request)
 
         val_shape = shape(initial_val)
 
@@ -138,8 +139,7 @@ class MeasureStepValue(SimProcedure):
 
         vals[0, ...] = initial_val
 
-        self.all_value = {'step_indices': step_indices,
-                          'values': vals}
+        self.all_value = {'step_indices': step_indices, 'trial_indices': self.trial_request, 'values': vals}
 
 
     def do_intermediate_task(self):
@@ -152,7 +152,7 @@ class MeasureStepValue(SimProcedure):
             step_index = step_indices.index(next_step)
 
             try:
-                next_value = self.get_val(self.simulation)
+                next_value = self.get_val(self.simulation, self.trial_request)
 
                 vals = self.all_value['values']
 
@@ -176,12 +176,11 @@ class MeasureMeanValue(MeasureStepValue):
     The trial_indices argument can take lists of indices (integer array
     indexing), slices, and numpy index expressions.
     """
-    def __init__(self, get_value, output_name='all_value', step_request=s_[:]):
-        self.get_val = lambda x: [mean(get_value(x), axis=0), sem(get_value(x))] 
+    def __init__(self, get_value, output_name='all_value', step_request=s_[:], trial_request=s_[:]):
+        self.get_val = lambda x,y: [mean(get_value(x,y), axis=0), sem(get_value(x,y))] 
         self.output_name = output_name
         self.step_request = step_request
-
-
+        self.trial_request = trial_request
 
 
 class MeasureAllStateDists(SimProcedure):

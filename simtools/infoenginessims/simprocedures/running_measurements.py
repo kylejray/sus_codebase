@@ -1,10 +1,15 @@
-from numpy import empty, zeros, multiply
+from numpy import empty, zeros, multiply, s_
 
 # from infoenginessims.simprocedures.basic_simprocedures import SimProcedure
 from .basic_simprocedures import SimProcedure
 
 
 # -------- First, functions to get the appropriate values at each time
+
+def get_current_state(simulation, trial_request=s_[:]):
+    """just returns a subset of current state, based on request."""
+    
+    return simulation.current_state[trial_request]
 
 def get_dW(simulation):
     """Gets step change in inclusive work."""
@@ -18,33 +23,34 @@ def get_dW(simulation):
 
     return dpotential
 
-def get_kinetic(simulation):
+def get_kinetic(simulation, trial_request=s_[:]):
     """Gets step change in inclusive work."""
 
     get_KE = simulation.system.get_kinetic_energy
-    state = simulation.current_state
+
+    state = simulation.current_state[trial_request]
 
     KE = get_KE(state)
 
     return KE
 
-def get_potential(simulation):
+def get_potential(simulation, trial_request=s_[:]):
     """Gets step change in inclusive work."""
 
     t = simulation.current_time
     get_PE = simulation.system.get_potential
-    state = simulation.current_state
+    state = simulation.current_state[trial_request]
 
     PE = get_PE(state, t)
 
     return PE
 
-def get_EPT(simulation):
+def get_EPT(simulation, trial_request=s_[:]):
     """Gets step change in inclusive work."""
 
     t = simulation.current_time
     get_force = simulation.system.get_external_force
-    state = simulation.current_state
+    state = simulation.current_state[trial_request]
     F = get_force(state, t)
 
     if simulation.system.has_velocity:

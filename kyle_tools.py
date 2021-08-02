@@ -287,16 +287,21 @@ def animate_hist_1D(all_state, total_time, which_axes=None, frame_skip=20, nbins
     txt = ax.text(0, 2, '{:.2f}'.format(0), verticalalignment='bottom')
 
     for j in range(len(which_axes)):
-        h1 = ax.hist(coords[j][:, 0], bins=nbins, range=lims, density=True)
+        counts, bins = np.histogram(coords[j][:, 0], bins=nbins)
+        h1 = ax.hist(bins[:-1], bins, weights=counts, density=True)
+        ax.set_xlim(lims)
         y_max = np.max(h1[0])
     ax.set_ylim([0, 1.2 * y_max])
 
     def animate(i):
-        t_c = time[i]
         plt.cla()
+        t_c = time[i]
         ax.set_ylim([0, 1.2 * y_max])
         for j in range(len(which_axes)):
-            ax.hist(coords[j][:, i], bins=nbins, range=lims, density=True)
+            counts, bins = np.histogram(coords[j][:, i], bins=nbins)
+            ax.hist(bins[:-1], bins, weights=counts, density=True)
+            ax.set_xlim(lims)
+            ax.set_ylim([0, 1.2 * y_max])
 
         txt.set_text('t={:.2f}'.format(t_c))
 
