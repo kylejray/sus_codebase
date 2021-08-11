@@ -3,7 +3,7 @@ import sys
 
 from math import sqrt
 
-infoenginessims_path = os.path.expanduser("~/source/") + "infoenginessims/"
+infoenginessims_path = os.path.expanduser("~/source/") + "simtools/"
 sys.path.insert(0, infoenginessims_path)
 
 from infoenginessims.api import *
@@ -35,6 +35,7 @@ def setup_sim(system, initial_state, procedures=None, nsteps=1000, damping=1, te
         dynamic = langevin_overdamped.LangevinOverdamped(omega, xi,
                                                          system.get_external_force)
 
+    dynamic.mass = system.mass
     integrator = rkdeterm_eulerstoch.RKDetermEulerStoch(dynamic)
 
     if procedures is None:
