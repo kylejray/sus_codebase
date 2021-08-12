@@ -226,7 +226,7 @@ class System:
 
             state[i:i+n_sucesses, :, :] = test_coords[p > decide, :, :]
             i = i + n_sucesses
-            print("found {} samples out of {}".format(i, Nsample), end="\r")
+            print("\r found {} samples out of {}".format(i, Nsample), end="")
 
             NT = max(int((Nsample-i)/ratio), 100)
 

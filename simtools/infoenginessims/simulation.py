@@ -96,7 +96,7 @@ class Simulation:
             current_state[...] = next_state[...]
 
             if verbose:
-                print("step {} of {} complete".format(step, nsteps),end="\r")
+                print("\r step {} of {} complete".format(step, nsteps),end="")
                 
                 
 
