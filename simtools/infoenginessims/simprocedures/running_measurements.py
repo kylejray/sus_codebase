@@ -1,4 +1,4 @@
-from numpy import empty, zeros, multiply, s_
+from numpy import empty, zeros, multiply, s_, append, einsum
 
 # from infoenginessims.simprocedures.basic_simprocedures import SimProcedure
 from .basic_simprocedures import SimProcedure
@@ -23,8 +23,21 @@ def get_dW(simulation):
 
     return dpotential
 
+def get_dE(simulation, trial_request=s_[:]):
+    """Gets step change energy change."""
+
+    time = simulation.current_time
+    dt = simulation.dt
+    get_energy = simulation.system.get_potential
+    state = simulation.current_state
+    next_state = simulation.next_state
+
+    dE = get_energy(next_state, time + dt) - get_energy(state, time)
+
+    return dE
+
 def get_kinetic(simulation, trial_request=s_[:]):
-    """Gets step change in inclusive work."""
+    """Gets kinetic enerrgy."""
 
     get_KE = simulation.system.get_kinetic_energy
 
@@ -35,7 +48,7 @@ def get_kinetic(simulation, trial_request=s_[:]):
     return KE
 
 def get_potential(simulation, trial_request=s_[:]):
-    """Gets step change in inclusive work."""
+    """Gets potential energy."""
 
     t = simulation.current_time
     get_PE = simulation.system.get_potential
@@ -45,8 +58,8 @@ def get_potential(simulation, trial_request=s_[:]):
 
     return PE
 
-def get_EPT(simulation, trial_request=s_[:]):
-    """Gets step change in inclusive work."""
+def get_pos_EPT(simulation, trial_request=s_[:]):
+    """Gets generalized equipartition."""
 
     t = simulation.current_time
     get_force = simulation.system.get_external_force
@@ -56,9 +69,16 @@ def get_EPT(simulation, trial_request=s_[:]):
     if simulation.system.has_velocity:
         state = state[...,0]
 
-    
-
     return multiply(state, -F)
+
+def get_EPT(simulation, trial_request=s_[:]):
+    t= simulation.current_time
+    state = simulation.current_state[trial_request]
+
+    X = append(state[...,0], simulation.system.mass * state[...,1], axis=1)
+    d_H = append( -simulation.system.get_external_force(state,t), state[...,1], axis=1)
+
+    return einsum('in,im->inm', X, d_H)
 
 
 def get_dW0(simulation):
@@ -78,6 +98,8 @@ def get_dW0(simulation):
     #               - get_potential(current_position, t)
 
     return -dpotential
+
+
 
 
 def get_dW01(simulation):
@@ -113,6 +135,8 @@ def get_dWdrag(simulation):
     avg_v2 = (v_curr**2 + v_next**2) / 2
 
     return -gamma / theta * avg_v2
+
+
 
 
 def get_dQ(simulation):

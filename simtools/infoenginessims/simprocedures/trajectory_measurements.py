@@ -31,14 +31,15 @@ class MeasureTrajectories(SimProcedure):
 class AlwaysIn(SimProcedure):
     """Checks if always in the trajectory classes defined in **kwargs."""
 
-    def __init__(self, output_name='trajectories', **kwargs):
+    def __init__(self, output_name='trajectories', state_slice=s_[:], **kwargs):
         self.output_name = output_name
+        self.state_slice = state_slice
 
         kwargs['trajectory_mode'] = False
         self.measure = MeasurementDevice(**kwargs)
 
     def get_dict(self, state):
-        _, bools = self.measure.apply(state)
+        _, bools = self.measure.apply(state[self.state_slice])
         return self.measure.get_lookup(bools)
         
 

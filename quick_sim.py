@@ -17,21 +17,27 @@ from infoenginessims import analysis
 import infoenginessims.analysis.running_quantities
 
 
-def setup_sim(system, initial_state, procedures=None, nsteps=1000, damping=1, temp=1, extra_time=1):
+def setup_sim(system, initial_state, procedures=None, sim_params=None, dt=1/200, damping=1, temp=1, extra_time=1):
+
 
     if system.has_velocity:
+        if sim_params is None:
+            sim_params=[1.,1.,1.]
 
-        theta = 1.
-        gamma = 1. * damping
-        eta = 1. * sqrt(damping) * sqrt(temp)
+        
+        gamma = sim_params[0] * damping
+        theta = sim_params[1]
+        eta = sim_params[2] * sqrt(damping) * sqrt(temp)
 
         dynamic = langevin_underdamped.LangevinUnderdamped(theta, gamma, eta,
                                                            system.get_external_force)
 
     else:
+        if sim_params is None:
+            sim_params=[1.,1.]
 
-        omega = 1.
-        xi = 1.
+        omega = sim_params[0]
+        xi = sim_params[1] * sqrt(temp)
         dynamic = langevin_overdamped.LangevinOverdamped(omega, xi,
                                                          system.get_external_force)
 
@@ -47,7 +53,7 @@ def setup_sim(system, initial_state, procedures=None, nsteps=1000, damping=1, te
 
     total_time = extra_time * (system.protocol.t_f-system.protocol.t_i)
 
-    dt = total_time / nsteps
+    nsteps = int(total_time / dt)
 
     sim = simulation.Simulation(integrator.update_state, procedures, nsteps, dt,
                                 initial_state)

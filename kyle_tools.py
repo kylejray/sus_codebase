@@ -291,6 +291,7 @@ def animate_hist_1D(all_state, total_time, which_axes=None, frame_skip=20, nbins
         h1 = ax.hist(bins[:-1], bins, weights=counts, density=True)
         ax.set_xlim(lims)
         y_max = np.max(h1[0])
+        
     ax.set_ylim([0, 1.2 * y_max])
 
     def animate(i):
