@@ -4,13 +4,12 @@ import os
 
 from numpy import empty, zeros, multiply, s_
 
+sim_path = os.path.dirname(os.path.realpath(__file__))+"/../../../informational_states"
+sys.path.append(sim_path)
+from measure import MeasurementDevice
+
 # from infoenginessims.simprocedures.basic_simprocedures import SimProcedure
 from .basic_simprocedures import SimProcedure, MeasureMeanValue
-
-is_path = os.path.expanduser('~/source/informational_states/')
-sys.path.insert(0, is_path)
-
-from measure import MeasurementDevice
 
 '''
 class MeasureTrajectories(SimProcedure):
@@ -31,9 +30,10 @@ class MeasureTrajectories(SimProcedure):
 class AlwaysIn(SimProcedure):
     """Checks if always in the trajectory classes defined in **kwargs."""
 
-    def __init__(self, output_name='trajectories', state_slice=s_[:], **kwargs):
+    def __init__(self, output_name='trajectories', state_slice=s_[:], step_request=None, **kwargs):
         self.output_name = output_name
         self.state_slice = state_slice
+        self.step_request=step_request
 
         kwargs['trajectory_mode'] = False
         self.measure = MeasurementDevice(**kwargs)
@@ -66,10 +66,14 @@ class CountJumps(AlwaysIn):
     def do_initial_task(self, simulation):
 
         self.simulation = simulation
-
         self.trajectory_dict = self.get_dict(simulation.initial_state)
         self.current_in_class = self.get_dict(simulation.initial_state)
+        self.initial_class = self.get_dict(self.simulation.initial_state)
 
+        self.step_indices=range(0)
+        if self.step_request is not None:
+            self.step_indices = range(self.simulation.nsteps + 1)[self.step_request]
+            self.step_list=[]
 
     def do_intermediate_task(self):
 
@@ -78,14 +82,26 @@ class CountJumps(AlwaysIn):
         for key in self.trajectory_dict:
             jump = (new_in_class[key] ^ self.current_in_class[key]).astype('int')
             self.trajectory_dict[key] = self.trajectory_dict[key] + jump
-
         self.current_in_class = new_in_class
+        
+        if self.simulation.current_step in self.step_indices:
+            temp_dict={}
+            for key in self.trajectory_dict:
+                temp_dict[key] = self.trajectory_dict[key]
+                temp_dict[key][~self.initial_class[key]]=False
+            self.step_list.append(temp_dict)
 
     def do_final_task(self):
-        initial_class = self.get_dict(self.simulation.initial_state)
         for key in self.trajectory_dict:
             # self.trajectory_dict[key] -= 1
-            self.trajectory_dict[key][~initial_class[key]] = False
+            self.trajectory_dict[key][~self.initial_class[key]] = False
+        
+        if self.step_request is not None:
+            self.step_list.append(self.trajectory_dict)
+            del(self.trajectory_dict)
+            self.trajectory_dict={}
+            self.trajectory_dict['step_list'] = self.step_list
+            self.trajectory_dict['step_request'] = self.step_indices
         return self.trajectory_dict
 
 

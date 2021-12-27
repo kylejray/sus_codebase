@@ -167,7 +167,7 @@ class System:
 
         return np.transpose(force)
 
-    def eq_state(self, Nsample,  t=None, resolution=500, beta=1, manual_domain=None, axes=None, slice_vals=None):
+    def eq_state(self, Nsample,  t=None, resolution=500, beta=1, manual_domain=None, axes=None, slice_vals=None, verbose=True):
         '''
         function still in development, docstring will come later.
         generates Nsample coordinates from an equilibrium distribution at
@@ -226,7 +226,8 @@ class System:
 
             state[i:i+n_sucesses, :, :] = test_coords[p > decide, :, :]
             i = i + n_sucesses
-            print("\r found {} samples out of {}".format(i, Nsample), end="")
+            if verbose:
+                print("\r found {} samples out of {}".format(i, Nsample), end="")
 
             NT = max(int((Nsample-i)/ratio), 100)
 
@@ -242,6 +243,7 @@ class System:
     def show_potential(
         self,
         t,
+        ax=None,
         resolution=100,
         surface=False,
         manual_domain=None,
@@ -249,6 +251,7 @@ class System:
         axis1=1,
         axis2=2,
         slice_values=None,
+        cbar=True,
         **plot_kwargs
     ):
         """
@@ -284,17 +287,19 @@ class System:
         -------
         returns fig, ax
         """
+        if ax is None:
+            fig, ax = plt.subplots()
+
         if self.potential.N_dim >= 2 and axis2 is not None:
             U, X_mesh = self.lattice(t, resolution, axes=(axis1, axis2), slice_values=slice_values, manual_domain=manual_domain)
             X = X_mesh[0]
             Y = X_mesh[1]
-
             x_min, x_max = np.min(X), np.max(X)
             y_min, y_max = np.min(Y), np.max(Y)
             if surface is False:
-                fig, ax = plt.subplots()
                 CS = ax.contourf(X, Y, U, contours, **plot_kwargs)
-                plt.colorbar(CS)
+                if cbar:
+                    plt.colorbar(CS)
                 ax.set_xlabel('x{}'.format(axis1))
                 ax.set_ylabel('x{}'.format(axis2))
                 ax.set_title("t={:.2f}".format(t))
@@ -317,7 +322,6 @@ class System:
             Y = U[0]
             x_min, x_max = np.min(X), np.max(X)
             y_min, y_max = np.min(Y), np.max(Y)
-            fig, ax = plt.subplots()
             ax.plot(X, Y, **plot_kwargs)
             ax.set_xlabel("x")
             ax.set_xlabel("U")

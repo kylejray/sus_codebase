@@ -3,21 +3,22 @@ import sys
 
 from math import sqrt
 
-infoenginessims_path = os.path.expanduser("~/source/") + "simtools/"
-sys.path.insert(0, infoenginessims_path)
+sim_path = os.path.dirname(os.path.realpath(__file__))+"/simtools/infoenginessims/"
+sys.path.append(sim_path)
 
-from infoenginessims.api import *
-from infoenginessims.integrators import rkdeterm_eulerstoch
-from infoenginessims.dynamics import langevin_underdamped, langevin_overdamped
-from infoenginessims.state_distributions import sd_tools, state_distribution
-from infoenginessims import simulation
-from infoenginessims.simprocedures import basic_simprocedures as sp
-from infoenginessims.simprocedures import running_measurements as rp
-from infoenginessims import analysis
-import infoenginessims.analysis.running_quantities
+'''
+WIP for addiing directories, recursively 
+sys.path.append([sim_path+f'{name}/' for name in os.listdir(sim_path) if os.path.isdir(sim_path+name)])
+'''
+
+from integrators import rkdeterm_eulerstoch
+from dynamics import langevin_underdamped, langevin_overdamped
+from simprocedures import basic_simprocedures as sp
+from simprocedures import running_measurements as rp
+from simulation import Simulation
 
 
-def setup_sim(system, initial_state, procedures=None, sim_params=None, dt=1/200, damping=1, temp=1, extra_time=1):
+def setup_sim(system, init_state, procedures=None, sim_params=None, dt=1/200, damping=1, temp=1, extra_time=1):
 
 
     if system.has_velocity:
@@ -55,8 +56,8 @@ def setup_sim(system, initial_state, procedures=None, sim_params=None, dt=1/200,
 
     nsteps = int(total_time / dt)
 
-    sim = simulation.Simulation(integrator.update_state, procedures, nsteps, dt,
-                                initial_state)
+    sim = Simulation(integrator.update_state, procedures, nsteps, dt,
+                                initial_state=init_state)
 
     sim.system = system
 

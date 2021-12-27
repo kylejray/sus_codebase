@@ -1,4 +1,4 @@
-from numpy import empty, s_, histogramdd, mean, shape, array
+from numpy import empty, s_, histogramdd, mean, shape, array, average
 from scipy.stats import sem
 
 
@@ -38,6 +38,17 @@ class ReturnFinalState(SimProcedure):
 
     def do_final_task(self):
         return self.simulation.next_state
+
+class ReturnInitialState(SimProcedure):
+    """Measurement that returns the supposedly existent final next_states."""
+
+    def do_initial_task(self, simulation, output_name='initial_state'):
+
+        self.simulation = simulation
+        self.output_name = output_name
+
+    def do_final_task(self):
+        return self.simulation.initial_state
 
 
 class MeasureAllState(SimProcedure):
@@ -176,11 +187,17 @@ class MeasureMeanValue(MeasureStepValue):
     The trial_indices argument can take lists of indices (integer array
     indexing), slices, and numpy index expressions.
     """
-    def __init__(self, get_value, output_name='all_value', step_request=s_[:], trial_request=s_[:]):
-        self.get_val = lambda x,y: [mean(get_value(x,y), axis=0), sem(get_value(x,y))] 
+    def __init__(self, get_value, output_name='all_value', step_request=s_[:], trial_request=s_[:], weights=None):
+        self.get_val = lambda x,y: [average(get_value(x,y), axis=0, weights=weights), sem(get_value(x,y))] 
         self.output_name = output_name
         self.step_request = step_request
         self.trial_request = trial_request
+    
+    def do_final_task(self):
+        self.all_value['std_error'] = self.all_value['values'][:,1,...]
+        self.all_value['values'] = self.all_value['values'][:,0,...]
+        
+        return self.all_value
 
 
 class MeasureAllStateDists(SimProcedure):

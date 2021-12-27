@@ -6,7 +6,7 @@ from math import sqrt
 from numpy import array, empty
 from random import Random, getrandbits
 
-from infoenginessims.gregtools import Bunch
+from gregtools import Bunch
 
 
 class Simulation:
@@ -96,7 +96,7 @@ class Simulation:
             current_state[...] = next_state[...]
 
             if verbose:
-                print("\r step {} of {} complete".format(step, nsteps),end="")
+                print("\r step {} of {} complete".format(step+1, nsteps),end="")
                 
                 
 

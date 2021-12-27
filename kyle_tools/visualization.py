@@ -1,29 +1,10 @@
-
-import sys
-import os
-
-
-
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.ticker as plticker
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.animation as animation
+from .info_space import separate_by_state
 
-
-is_path = os.path.expanduser('~/source/informational_states/')
-sys.path.insert(0, is_path)
-
-from measure import MeasurementDevice, Measurement
-
-
-
-def separate_by_state(state, **kwargs):
-    kwargs['trajectory_mode'] = False
-    measurement_device = MeasurementDevice(**kwargs)
-
-    _, bools = measurement_device.apply(state)
-
-    return measurement_device.get_lookup(bools)
 
 
 def animate_sim(all_state, total_time, frame_skip=30, which_axes=None, axes_names=None, color_by_state=None, key_state=None, color_key=None, legend=True, alpha=None):
@@ -310,104 +291,6 @@ def animate_hist_1D(all_state, total_time, which_axes=None, frame_skip=20, nbins
     return ani
 
 
-def szilard_accuracy_init_final(init_s, fin_s):
-    tfs = fin_s
-    tis = init_s
-    suc_L2U = sum(tfs[tis[:, 0, 0] > 0][:, 1, 0] > 0)
-    suc_R2D = sum(tfs[tis[:, 0, 0] < 0][:, 1, 0] < 0)
-    fail_L2D = sum(tfs[tis[:, 0, 0] > 0][:, 1, 0] < 0)
-    fail_R2U = sum(tfs[tis[:, 0, 0] < 0][:, 1, 0] > 0)
-    accuracy = (suc_L2U+suc_R2D)/len(tis)
-    failure = (fail_L2D+fail_R2U)/len(tis)
-    return accuracy, failure
-
-
-def szilard_accuracy_all_state(system, all_state, offsets=None, return_trajectories=False):
-    positions = all_state[..., 0]
-    N, steps, _ = np.shape(positions)
-
-    if offsets is not None:
-        positions = positions - offsets
-    
-    fs_lookup = separate_by_state(positions[:,-1])
-    fs_distribution=[]
-    target_distribution = .25 * np.ones(4)
-    for key in fs_lookup:
-        fs_distribution.append(sum(fs_lookup[key]))
-    fs_distribution = np.divide( fs_distribution, N)
-    dkl = sum(fs_distribution * np.log( fs_distribution/ target_distribution))
-
-    binary_device = MeasurementDevice()
-    binary_measurement = Measurement(binary_device, dataset=positions)
-    traj = binary_measurement.trajectories_by_number()
-    numb_lookup = binary_device.get_lookup(binary_measurement.outcome_numbers)
-
-    bound = int(steps/2)
-    measure = np.s_[:,:bound]
-    control = np.s_[:,bound:]
-
-    L0L1_measure = ((traj[measure] == numb_lookup['00']) | (traj[measure] == numb_lookup['01'])).all(axis=1) & (traj[:, bound] == numb_lookup['00'])
-    L0L1_control = ((traj[control] == numb_lookup['00']) | (traj[control] == numb_lookup['10'])).all(axis=1)
-    L0L1_succ = L0L1_measure & L0L1_control
-
-    R0R1_measure = ((traj[measure] == numb_lookup['10']) | (traj[measure] == numb_lookup['11'])).all(axis=1) & (traj[:, bound] == numb_lookup['11'])
-    R0R1_control = ((traj[control] == numb_lookup['01']) | (traj[control] == numb_lookup['11'])).all(axis=1)
-    R0R1_succ = R0R1_measure & R0R1_control
-
-    accuracy = (sum(L0L1_succ) + sum(R0R1_succ))/N, dkl
-    print("success ratio, dkl:", accuracy)
-
-    if return_trajectories:
-        bools = ~(L0L1_succ | R0R1_succ), L0L1_succ, R0R1_succ
-        keys = 'failures', 'right_sucess', 'left_success'
-        print('second return is a dictionary with the following keys:',keys)
-        trajectory_dict = dict(zip(keys, bools))
-        return accuracy, trajectory_dict 
-    else:
-        return accuracy
-
-
-def fredkin_fidelity(initial_state, final_state, verbose=False):
-    trials = len(initial_state)
-
-    is_lookup = separate_by_state(initial_state)
-    fs_lookup = separate_by_state(final_state)
-
-    storage_fixed_gates = ['000', '001', '010', '011']
-    comp_fixed_gates = ['100', '111']
-
-    sfg_succ = 0
-    sfg_total = 0
-    for key in storage_fixed_gates:
-        sfg_total += sum(is_lookup[key])
-        sfg_succ += sum(is_lookup[key] & fs_lookup[key])
-
-    cfg_succ = 0
-    cfg_total = 0
-    for key in comp_fixed_gates:
-        cfg_total += sum(is_lookup[key])
-        cfg_succ += sum(is_lookup[key] & fs_lookup[key])
-
-    csg_succ = 0
-    csg_total = sum(is_lookup['101']) + sum(is_lookup['110'])
-    csg_succ += sum(is_lookup['101'] & fs_lookup['110'])
-    csg_succ += sum(is_lookup['110'] & fs_lookup['101'])
-
-    marginal_success = [[csg_succ, csg_total], [cfg_succ, cfg_total], [sfg_succ, sfg_total]]
-    success, total = np.sum(marginal_success, axis=0)
-    marginal_success.append([success, total])
-
-    if verbose is True:
-        print('swap gates:{} success out of {}'.format(csg_succ, csg_total))
-        print('computational fixed gates:{} success out of {}'.format(cfg_succ, cfg_total))
-        print('storage fixed gates:{} success out of {}'.format(sfg_succ, sfg_total))
-        names = ['swap gates', 'computational fixed gates', 'storage fixed gates', 'overall fidelity']
-        return(dict(zip(names, marginal_success)))
-    else:
-        return success/total
-
-
-def crooks_analysis_tsp(work, nbins=25, beta=1, low_stats=True):
     '''
     function to do crooks analysis for a list of works that come frmo a time symmeteic protocol. does some plots, returns some info
 
@@ -481,6 +364,253 @@ def crooks_analysis_tsp(work, nbins=25, beta=1, low_stats=True):
 
     return works, [neg_counts, pos_counts]
 
+def heatmap(data, col_labels, row_labels, ax=None,
+            cbar_kw={}, cbarlabel="", **kwargs):
+    """
+    Create a heatmap from a numpy array and two lists of labels.
+
+    Parameters
+    ----------
+    data
+        A 2D numpy array of shape (N, M).
+    row_labels
+        A list or array of length N with the labels for the rows.
+    col_labels
+        A list or array of length M with the labels for the columns.
+    ax
+        A `matplotlib.axes.Axes` instance to which the heatmap is plotted.  If
+        not provided, use current axes or create a new one.  Optional.
+    cbar_kw
+        A dictionary with arguments to `matplotlib.Figure.colorbar`.  Optional.
+    cbarlabel
+        The label for the colorbar.  Optional.
+    **kwargs
+        All other arguments are forwarded to `imshow`.
+    """
+
+    if not ax:
+        ax = plt.gca()
+
+    # Plot the heatmap
+    im = ax.imshow(data.transpose(), **kwargs, origin='lower')
+
+    # Create colorbar
+    cbar = ax.figure.colorbar(im, ax=ax, **cbar_kw)
+    cbar.ax.set_ylabel(cbarlabel, rotation=-90, va="bottom")
+
+    # We want to show all ticks...
+    ax.set_xticks(np.arange(data.shape[0]))
+    ax.set_yticks(np.arange(data.shape[1]))
+    # ... and label them with the respective list entries.
+    ax.set_xticklabels(col_labels)
+    ax.set_yticklabels(row_labels)
+
+    # Let the horizontal axes labeling appear on top.
+    ax.tick_params(top=False, bottom=True,
+                   labeltop=False, labelbottom=True)
+
+    # Rotate the tick labels and set their alignment.
+    #plt.setp(ax.get_xticklabels(), rotation=-30, ha="right",
+    #         rotation_mode="anchor")
+
+    # Turn spines off and create white grid.
+
+    #ax.spines[:].set_visible(False)
+    #ax.set_xticks(np.arange(data.shape[1]+1)-.5, minor=True)
+    #ax.set_yticks(np.arange(data.shape[0]+1)-.5, minor=True)
+    #ax.grid(which="minor", color="w", linestyle='-', linewidth=3)
+    #ax.tick_params(which="minor", bottom=False, left=False)
+
+    return im, cbar
+
+def annotate_heatmap(im, data=None, valfmt="{x:.2f}",
+                     textcolors=("black", "white"),
+                     threshold=None, **textkw):
+    """
+    A function to annotate a heatmap.
+
+    Parameters
+    ----------
+    im
+        The AxesImage to be labeled.
+    data
+        Data used to annotate.  If None, the image's data is used.  Optional.
+    valfmt
+        The format of the annotations inside the heatmap.  This should either
+        use the string format method, e.g. "$ {x:.2f}", or be a
+        `matplotlib.ticker.Formatter`.  Optional.
+    textcolors
+        A pair of colors.  The first is used for values below a threshold,
+        the second for those above.  Optional.
+    threshold
+        Value in data units according to which the colors from textcolors are
+        applied.  If None (the default) uses the middle of the colormap as
+        separation.  Optional.
+    **kwargs
+        All other arguments are forwarded to each call to `text` used to create
+        the text labels.
+    """
+
+    if not isinstance(data, (list, np.ndarray)):
+        data = im.get_array()
+
+    '''
+    # Normalize the threshold to the images color range.
+    try:
+        threshold = im.norm(threshold)
+    except TypeError:
+        pass
+    '''
+
+    # Set default alignment to center, but allow it to be
+    # overwritten by textkw.
+    kw = dict(horizontalalignment="center",
+              verticalalignment="center")
+    kw.update(textkw)
+
+    # Get the formatter in case a string is supplied
+    if isinstance(valfmt, str):
+        valfmt = plticker.StrMethodFormatter(valfmt)
+
+    # Loop over the data and create a `Text` for each "pixel".
+    # Change the text's color depending on the data.
+    texts = []
+    for i in range(data.shape[0]):
+        for j in range(data.shape[1]):
+            try: kw.update(color=textcolors[int(im.norm(data[i, j]) > threshold)])
+            except:
+                kw.update(color=textcolors)
+            try:
+                text = im.axes.text(j, i, valfmt(data[i, j], None), **kw)
+                texts.append(text)
+            except:
+                pass
+
+    return texts
+
+def pcolor_diagram(field, ax=None, size=10, colorbar=False, y_min=0, y_max=None,
+                x_min=0, x_max=None, ticks=True, xtick_spacing=10, ytick_spacing=10,
+                tick_size=None, cmap=plt.cm.Dark2, edgecolors='none', return_pcolor=False,
+                **pcolormesh_kwargs):
+    '''
+    Plots the given 2D field using matplotlib pcolormesh. Returns a matplotlib
+    Axes object.
+
+    Parameters
+    ----------
+    field: ndarray (2-D)
+        2-D array of data to be plotted.
+    ax: matplotlib Axes object, optional (default=None)
+        An external Axes object that may be passed in to be further manipulated
+        after calling this plotting function.
+    size: int, optional (default=16)
+        Sets the size of the Figure object.
+    colorbar: bool, optional (default=False)
+        Set to True to include a colorbar in the plot, False to not include a colorbar.
+    y_min: int, optional (default=0)
+        Lower limit of the y-axis to be plotted.
+    y_max: int, optional (default=None)
+        Upper limit of the y-axis to be plotted. If None, is set to the size of the
+        y-axis for the input field.
+    x_min: int, optional (default=0)
+        Lower limit of the x-axis to be plotted.
+    x_max: int, optional (default=None)
+        Upper limit of the x-axis to be plotted. If None, is set to the size of the
+        x-axis for the input field.
+    ticks: bool, optional (default=None)
+        Determines whether to display the axis tick marks and corresponding labels or not.
+    xtick_spacing: int, optional (default=10)
+        Sets the interval for ticks on along the x-axis.
+    ytick_spacing: int, optional (default=10)
+        Sets the interval for ticks along the y-axis.
+    tick_size: int, optional (default=None)
+        Sets the size of the tick labels for the axes. If None, defaults to the value
+        of the 'size' parameter.
+    cmap: matplotlib colormap, optional (default=plt.cm.Greys)
+        Colormap used by pcolormesh for plotting the input field.
+    edgecolors: valid matplotlib color, optional (default='black')
+        Sets the color of the gird lines outlining the cells of the field.
+        If set to 'none' does not display any grid lines.
+    **pcolormesh_kwargs:
+        Additional keyword arguments for the matplotlib pcolormesh plotting function.
+
+    Returns
+    -------
+    ax: matplotlib Axes object
+        Axes object that has either been passed in or created, then updated with
+        this function.
+    '''
+    h,w = np.shape(field)
+    if y_max is None:
+        y_max = h
+    if x_max is None:
+        x_max = w
+    H = y_max - y_min
+    W = x_max - x_min
+    if ax is None:
+        figax = plt.subplots(figsize = (size, (H/W)*size))
+        ax=figax[1]
+
+    cropped_field = field[y_min:y_max, x_min:x_max]
+    im = ax.pcolormesh(cropped_field, cmap=cmap, edgecolors=edgecolors, **pcolormesh_kwargs)
+    ax.invert_yaxis()
+
+    if colorbar:
+        plt.colorbar(im,fraction=0.046, pad=0.04)
+
+
+    # various code for tick control
+    if ticks:
+        ax.xaxis.tick_top()
+        ax.xaxis.set_major_locator(plticker.MultipleLocator(xtick_spacing))
+        ax.yaxis.set_major_locator(plticker.MultipleLocator(ytick_spacing))
+        if tick_size is None:
+            tick_size = size
+        x_labels = [str(int(label)+x_min+xtick_spacing) for label in ax.get_xticks().tolist()]
+        y_labels = [str(int(label)+y_min+ytick_spacing) for label in ax.get_yticks().tolist()]
+        x_ticks = [tick+0.5 for tick in ax.get_xticks()]
+        y_ticks = [tick +0.5 for tick in ax.get_yticks()]
+        if W % xtick_spacing == 0:
+            x_trim = 2
+        else:
+            x_trim = 1
+        if H % ytick_spacing == 0:
+            y_trim = 2
+        else:
+            y_trim = 1
+        ax.set_xticks(x_ticks[1:len(x_ticks)-x_trim], minor=True)
+        ax.set_yticks(y_ticks[1:len(y_ticks)-y_trim], minor=True)
+        ax.set_xticklabels(x_labels, fontsize=tick_size, minor=True)
+        ax.set_yticklabels(y_labels, fontsize=tick_size, minor=True)
+        ax.xaxis.set_major_formatter(plticker.NullFormatter())
+        ax.yaxis.set_major_formatter(plticker.NullFormatter())
+        ax.tick_params(
+                axis='both',
+                which='minor',
+                direction='out',
+                top='off',
+                right='off',
+                pad=8)
+        ax.tick_params(
+                axis='both',
+                which='major',
+                top='off',
+                bottom='off',
+                left='off',
+                right='off')
+    else:
+        ax.tick_params(axis='both',
+                        which='both',
+                        bottom='off',
+                        top='off',
+                        left='off',
+                        right='off',
+                        labelleft='off',
+                        labelbottom='off')
+    if return_pcolor:
+        return(im,ax)
+    else:
+        return ax
 
 '''
 def equilibrated_state(eq_system, T=1, N=5000, initial_state=None, eq_period=1, what_time=0, max_iterations=4):
