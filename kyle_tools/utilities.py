@@ -27,11 +27,17 @@ def open_json(file_path):
     with open(file_path, 'r') as f:
         return json.load(f)
 
-def file_list(directory, extension_list=['.json']):
+def file_list(directory, prefix_list=[''], extension_list=['.json']):
     '''
-    returns a list of strings representing filenames in dir that have extensions in extension_list
+    returns a list of strings representing filenames in dir that have extensions in extension_list and start with prefixes in prefix list
     '''
-    return [f for f in os.listdir(directory) if os.path.splitext(f)[1] in extension_list]
+    def filter_func(f):
+        valid_ext = os.path.splitext(f)[1] in extension_list
+        valid_pref = any([f.startswith(item) for item in prefix_list])
+        return valid_ext & valid_pref
+
+    file_list = list(filter(lambda f: filter_func(f), os.listdir(directory)))
+    return [directory+f for f in file_list]
 
 
 '''
