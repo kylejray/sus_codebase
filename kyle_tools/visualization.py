@@ -6,6 +6,8 @@ import matplotlib.animation as animation
 from .info_space import separate_by_state
 
 
+rc_dict = {'font.size':16, 'axes.labelsize':'large', 'ytick.right':False,'legend.loc':'upper right', 'legend.fontsize':'xx-small', 'figure.autolayout':True, 'figure.figsize': (3.5,3.5), 'mathtext.fontset':'stix', 'font.family':'STIXGeneral'}
+
 
 def animate_sim(all_state, total_time, frame_skip=30, which_axes=None, axes_names=None, color_by_state=None, key_state=None, color_key=None, legend=True, alpha=None):
 
@@ -364,8 +366,8 @@ def animate_hist_1D(all_state, total_time, which_axes=None, frame_skip=20, nbins
 
     return works, [neg_counts, pos_counts]
 
-def heatmap(data, col_labels, row_labels, ax=None,
-            cbar_kw={}, cbarlabel="", **kwargs):
+def heatmap(data, col_labels, row_labels, label_slice=np.s_[:], ax=None,
+            cbar_kw={}, **kwargs):
     """
     Create a heatmap from a numpy array and two lists of labels.
 
@@ -395,15 +397,15 @@ def heatmap(data, col_labels, row_labels, ax=None,
     im = ax.imshow(data.transpose(), **kwargs, origin='lower')
 
     # Create colorbar
-    cbar = ax.figure.colorbar(im, ax=ax, **cbar_kw)
-    cbar.ax.set_ylabel(cbarlabel, rotation=-90, va="bottom")
+    cbar = ax.figure.colorbar(im, **cbar_kw)
+    #cbar.ax.set_ylabel(cbar_kw['label'], rotation=-90, va="bottom")
 
     # We want to show all ticks...
-    ax.set_xticks(np.arange(data.shape[0]))
-    ax.set_yticks(np.arange(data.shape[1]))
-    # ... and label them with the respective list entries.
-    ax.set_xticklabels(col_labels)
-    ax.set_yticklabels(row_labels)
+    ax.set_xticks(np.arange(data.shape[0])[label_slice])
+    ax.set_yticks(np.arange(data.shape[1])[label_slice])
+    # ... and label them with the respective list entries if not too many
+    ax.set_xticklabels(col_labels[label_slice])
+    ax.set_yticklabels(row_labels[label_slice])
 
     # Let the horizontal axes labeling appear on top.
     ax.tick_params(top=False, bottom=True,
