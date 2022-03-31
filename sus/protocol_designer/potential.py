@@ -58,6 +58,7 @@ class Potential:
         """
 
         self.scale = 1
+        self.conservative = True
         self.pot = potential
         self.force = external_force
         self.N_params = N_params

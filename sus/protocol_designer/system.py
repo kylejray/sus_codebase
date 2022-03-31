@@ -158,7 +158,9 @@ class System:
         """
 
         params = self.protocol.get_params(t)
-        positions = self.get_positions(coords)
+        positions = coords.transpose()
+        if self.potential.conservative:
+            positions = self.get_positions(coords)
 
         if self.potential.N_dim == 1:
             force = self.potential.external_force(positions, params)
@@ -167,7 +169,7 @@ class System:
 
         return np.transpose(force)
 
-    def eq_state(self, Nsample,  t=None, resolution=500, beta=1, manual_domain=None, axes=None, slice_vals=None, verbose=True):
+    def eq_state(self, Nsample, t=None, resolution=500, beta=1, manual_domain=None, axes=None, slice_vals=None, verbose=True):
         '''
         function still in development, docstring will come later.
         generates Nsample coordinates from an equilibrium distribution at
@@ -297,11 +299,9 @@ class System:
             x_min, x_max = np.min(X), np.max(X)
             y_min, y_max = np.min(Y), np.max(Y)
             if surface is False:
-                CS = ax.contourf(X, Y, U, contours, **plot_kwargs)
+                out = ax.contourf(X, Y, U, contours, **plot_kwargs)
                 if cbar:
-                    plt.colorbar(CS)
-                ax.set_xlabel('x{}'.format(axis1))
-                ax.set_ylabel('x{}'.format(axis2))
+                    plt.colorbar(out)
                 ax.set_title("t={:.2f}".format(t))
 
                 plt.show()
@@ -309,9 +309,7 @@ class System:
             if surface is True:
                 fig = plt.figure()
                 ax = fig.add_subplot(111, projection="3d")
-                ax.plot_wireframe(X, Y, U, **plot_kwargs)
-                ax.set_xlabel('x{}'.format(axis1))
-                ax.set_ylabel('x{}'.format(axis2))
+                out = ax.plot_wireframe(X, Y, U, **plot_kwargs)
                 ax.set_title("t={:.2f}".format(t))
 
                 plt.show()
@@ -322,17 +320,16 @@ class System:
             Y = U[0]
             x_min, x_max = np.min(X), np.max(X)
             y_min, y_max = np.min(Y), np.max(Y)
-            ax.plot(X, Y, **plot_kwargs)
-            ax.set_xlabel("x")
-            ax.set_xlabel("U")
+            out = ax.plot(X, Y, **plot_kwargs)
             ax.set_title("t={:.2f}".format(t))
 
-        return fig, ax
+        return ax, out
 
     def show_force(
         self,
         t,
         resolution=20,
+        ax=None,
         manual_domain=None,
         axis1=1,
         axis2=2,
@@ -365,6 +362,10 @@ class System:
         -------
         returns fig, ax
         """
+
+        if ax is None:
+            fig, ax = plt.subplots()
+
         if self.potential.N_dim >= 2 and axis2 is not None:
             F, X_mesh = self.lattice(t, resolution, axes=(axis1, axis2), slice_values=slice_values, manual_domain=manual_domain, return_force=True)
             X = X_mesh[0]
@@ -392,7 +393,7 @@ class System:
             ax.set_xlabel("F")
             ax.set_title("t={:.2f}".format(t))
 
-        return fig, ax
+        return ax
 
     def animate_protocol(
         self,

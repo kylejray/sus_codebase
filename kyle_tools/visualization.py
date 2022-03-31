@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.ticker as plticker
@@ -9,7 +10,7 @@ from .info_space import separate_by_state
 rc_dict = {'font.size':16, 'axes.labelsize':'large', 'ytick.right':False,'legend.loc':'upper right', 'legend.fontsize':'xx-small', 'figure.autolayout':True, 'figure.figsize': (3.5,3.5), 'mathtext.fontset':'stix', 'font.family':'STIXGeneral'}
 
 
-def animate_sim(all_state, total_time, frame_skip=30, which_axes=None, axes_names=None, color_by_state=None, key_state=None, color_key=None, legend=True, alpha=None):
+def animate_sim_old(all_state, total_time, frame_skip=30, which_axes=None, axes_names=None, color_by_state=None, key_state=None, color_key=None, legend=True, alpha=None, fig_ax=None):
 
     if color_by_state is not None:
         if key_state is not None:
@@ -31,7 +32,11 @@ def animate_sim(all_state, total_time, frame_skip=30, which_axes=None, axes_name
 
     x_array = [all_state[item] for item in which_axes]
 
-    fig, ax = plt.subplots()
+    if fig_ax is None:
+        fig, ax = plt.subplots()
+    else:
+        fig, ax = fig_ax
+
     samples = np.linspace(0, nsteps, nsteps + 1)[::frame_skip]
     time = np.linspace(0, total_time, nsteps + 1)
     opacity=alpha
@@ -39,7 +44,6 @@ def animate_sim(all_state, total_time, frame_skip=30, which_axes=None, axes_name
         opacity = min(1, 500/N)
 
     if len(x_array) == 2:
-        fig, ax = plt.subplots(figsize=(5, 5))
         x = x_array[0]
         y = x_array[1]
 
@@ -101,7 +105,7 @@ def animate_sim(all_state, total_time, frame_skip=30, which_axes=None, axes_name
         z_lim = (np.min(z), np.max(z))
 
         ax.set(xlim=x_lim, ylim=y_lim, zlim=z_lim, xlabel=names[0], ylabel=names[1], zlabel=names[2])
-        txt = ax.set_title('t={:.2f}'.format(0))
+        txt = ax.suptitle('t={:.2f}'.format(0))
 
         def animate(i):
             index = int(samples[i])
@@ -119,7 +123,95 @@ def animate_sim(all_state, total_time, frame_skip=30, which_axes=None, axes_name
 
     ani = animation.FuncAnimation(fig, animate, interval=100, frames=len(samples), blit=False)
 
-    return ani
+    return ani, fig, ax
+
+def animate_sim(all_state, times=[0,1], system=None, frame_skip=30, which_axes=None, axes_names=None, color_by_state=None, key_state=None, color_key=None, legend=True, alpha=None, fig_ax=None, **pot_kwargs):
+
+    if color_by_state is not None:
+        if key_state is not None:
+            state_lookup = separate_by_state(key_state)
+        else:
+            state_lookup = separate_by_state(all_state[:, 0, ...])
+
+    N, nsteps, N_dim = np.shape(all_state)[0], np.shape(all_state)[1], np.shape(all_state)[2]
+
+    if which_axes is None:
+        assert np.size(np.shape(all_state)) in (3, 4), 'not a recognized all_state format, use which_axes kwarg or all_state of dimension [N, Nsteps, D, 2]/[N, Nsteps, D]'
+        for i in range(N_dim):
+            if np.size(np.shape(all_state)) == 4:
+                which_axes = [np.s_[..., i, 0] for i in range(N_dim)]
+            if np.size(np.shape(all_state)) == 3:
+                which_axes = [np.s_[..., i] for i in range(N_dim)]
+
+    assert len(which_axes) == 2, 'can only plot 2 coordinates at once'
+
+    x_array = [all_state[item] for item in which_axes]
+
+    if fig_ax is None:
+        fig, ax = plt.subplots()
+
+    else:
+        fig, ax = fig_ax
+        
+    samples = np.linspace(0, nsteps-1, nsteps)[::frame_skip]
+    time = np.linspace(times[0], times[1], nsteps + 1)
+    opacity=alpha
+    if opacity is None:
+        opacity = min(1, 300/N)
+
+    x = x_array[0]
+    y = x_array[1]
+
+    names = axes_names
+
+    if axes_names is None:
+        names = ('x', 'y')
+
+
+    x_lim = (np.min(x), np.max(x))
+    y_lim = (np.min(y), np.max(y))
+    
+    txt = fig.suptitle('t={:.2f}'.format(times[0]))
+
+    scat_kwargs = {'alpha':opacity, 'zorder':10}
+
+    if color_by_state is None:
+        scat = ax.scatter(x[:, 0], y[:, 0], **scat_kwargs)
+    else:
+        if color_key is not None:
+            color_lookup = dict(zip(state_lookup, color_key))
+            scat = [ax.scatter(x[state_lookup[key], 0], y[state_lookup[key], 0], c=color_lookup[key], **scat_kwargs) for key in state_lookup]
+        else:
+            scat = [ax.scatter(x[state_lookup[key], 0], y[state_lookup[key], 0], **scat_kwargs) for key in state_lookup]
+        if legend:
+            fig.legend(state_lookup)
+    
+    if system is not None:
+        pot, pout = system.show_potential(times[0], ax=ax, cbar=False, surface=False, **pot_kwargs)
+        pot.title.set_visible(False)
+    ax.set(xlim=x_lim, ylim=y_lim, xlabel=names[0], ylabel=names[1])
+
+    def animate(i):
+        index = int(samples[i])
+        t_c = time[index]
+        x_i = x[:, index]
+        y_i = y[:, index]
+
+        if system is not None:
+            new_pot = system.show_potential(t_c, cbar=False, ax=ax, surface=False, **pot_kwargs)
+            #pot.collections = new_pot[0].collections
+
+        if color_by_state is None:
+            scat.set_offsets(np.c_[x_i, y_i])
+        else:
+            for i, item in enumerate(state_lookup):
+                scat[i].set_offsets(np.c_[x_i[state_lookup[item]], y_i[state_lookup[item]]])
+        txt.set_text('t={:.2f}'.format(t_c))
+
+
+    ani = animation.FuncAnimation(fig, animate, interval=100, frames=len(samples), blit=False)
+
+    return ani, fig, ax
 
 
 def animate_hist_2D(all_state, total_time, which_axes=None, frame_skip=30, nbins=64, lims=None):
@@ -154,7 +246,7 @@ def animate_hist_2D(all_state, total_time, which_axes=None, frame_skip=30, nbins
         hist = ax.hist2d(x_i, y_i, bins=nbins, range=lims)
         txt.set_text('t={:.2f}'.format(t_c))
 
-    ani = animation.FuncAnimation(fig, animate, interval=100, frames=len(time), blit=False)
+    ani = animation.FuncAnimation(fig, animate, interval=100, frames=len(time), blit=True)
     return ani
 
 
@@ -366,7 +458,7 @@ def animate_hist_1D(all_state, total_time, which_axes=None, frame_skip=20, nbins
 
     return works, [neg_counts, pos_counts]
 
-def heatmap(data, col_labels, row_labels, label_slice=np.s_[:], ax=None,
+def heatmap(data, col_labels, row_labels, label_slices=[np.s_[:],np.s_[:]], ax=None,
             cbar_kw={}, **kwargs):
     """
     Create a heatmap from a numpy array and two lists of labels.
@@ -401,11 +493,11 @@ def heatmap(data, col_labels, row_labels, label_slice=np.s_[:], ax=None,
     #cbar.ax.set_ylabel(cbar_kw['label'], rotation=-90, va="bottom")
 
     # We want to show all ticks...
-    ax.set_xticks(np.arange(data.shape[0])[label_slice])
-    ax.set_yticks(np.arange(data.shape[1])[label_slice])
+    ax.set_xticks(np.arange(data.shape[0])[label_slices[0]])
+    ax.set_yticks(np.arange(data.shape[1])[label_slices[1]])
     # ... and label them with the respective list entries if not too many
-    ax.set_xticklabels(col_labels[label_slice])
-    ax.set_yticklabels(row_labels[label_slice])
+    ax.set_xticklabels(col_labels[label_slices[0]])
+    ax.set_yticklabels(row_labels[label_slices[1]])
 
     # Let the horizontal axes labeling appear on top.
     ax.tick_params(top=False, bottom=True,

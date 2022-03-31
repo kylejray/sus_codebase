@@ -2,8 +2,11 @@ import os
 import sys
 import json
 import numpy as np
+import datetime
 
 def jsonify(data):
+    if not isinstance(data, dict):
+        data = {type(data):data}
     json_data = dict()
     for key, value in data.items():
         if isinstance(value, list) or isinstance(value, tuple): # for lists and tuples
@@ -12,6 +15,8 @@ def jsonify(data):
             value = jsonify(value)
         if isinstance(key, int): # if key is integer: > to string
             key = str(key)
+        if isinstance(value,datetime.datetime):
+            value = f"{value}"
         if type(value).__module__=='numpy': # if value is numpy.*: > to python list
             value = value.tolist()
         if type(value)==range: # if value is range > to python list
@@ -26,6 +31,29 @@ def jsonify(data):
 def open_json(file_path):
     with open(file_path, 'r') as f:
         return json.load(f)
+
+
+
+def save_as_json(input_dict, name=None, dir=None):
+    if 'save_date' not in input_dict.keys():
+        now = datetime.datetime.now()
+        input_dict['save_date'] = now
+    if dir is None:
+        dir = f"./{now.year-2000}_{now.month:02d}_{now.day:02d}/"
+    if not os.path.exists(dir):
+        os.makedirs(dir)
+    save_dict = jsonify(input_dict)
+
+    if name is None:
+        try: name = input_dict['save_name']
+        except: name = f"./{now.hour:02d}{now.minute:02d}_{now.second:02d}p{now.microsecond:06d}"
+    dir += name + '.json'
+    with open(dir, 'w') as fout:
+        json.dump(save_dict, fout)
+    print('\n saved as json')
+    return
+
+
 
 def file_list(directory, prefix_list=[''], extension_list=['.json']):
     '''
@@ -126,14 +154,14 @@ def inv_xtanhx(arg, tol=.001, max_iterations=10):
             steps = steps*2
             i+=1
     return output  
-'''
+
 from sklearn.neighbors import KernelDensity
 
 
 def kde(train_data, bandwidth=1, kernel='gaussian'):
-    n_dim = len(train_data)
+    n_dim = len(train_data[-1])
     
-    train_data = np.c_[*train_data]
+    #train_data = np.c_(*train_data)
     
     kde = KernelDensity(bandwidth=bandwidth, kernel=kernel)
 
@@ -142,11 +170,12 @@ def kde(train_data, bandwidth=1, kernel='gaussian'):
     kde.n = n_dim
 
     return kde
-
-def kde_prob(kde, data)
+'''
+def kde_plot(kde, range):
     original_shape = np.shape(data)
     assert len(original_shape) == 2
 
+    X, Y = np.meshgrid(*data)
 
     plot_data = np.c_[Y.ravel(),X.ravel()]
     
@@ -159,13 +188,13 @@ def kde_prob(kde, data)
     ax.plot_wireframe(X, Y, np.exp(rs_log), alpha=.5)
     return(fig, ax)
 
-    xlims = [50,100]
-    ylims = [0,100]
     x_d = np.linspace(*xlims, mesh)
     y_d = np.linspace(*ylims, mesh)
 
     X, Y = np.meshgrid(x_d, y_d)
+'''
 
+'''
 def equilibrated_state(eq_system, T=1, N=5000, initial_state=None, eq_period=1, what_time=0, max_iterations=4):
 
     delta_E = 1
