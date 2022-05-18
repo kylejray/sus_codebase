@@ -337,7 +337,7 @@ def plot_state(state, which_axes=None, axes_names=None, color_by_state=None, ini
 
 def animate_hist_1D(all_state, total_time, which_axes=None, frame_skip=20, nbins=64, lims=None):
 
-    N, nsteps, N_dim, _ = np.shape(all_state)
+    N, nsteps, N_dim, *_ = np.shape(all_state)
     if which_axes is None:
         which_axes = []
         for i in range(N_dim):
@@ -349,7 +349,7 @@ def animate_hist_1D(all_state, total_time, which_axes=None, frame_skip=20, nbins
 
     time = time[samples]
 
-    all_state = all_state[:, samples, :, :]
+    all_state = all_state[:, samples, ...]
 
     coords = []
     for item in which_axes:
@@ -372,17 +372,17 @@ def animate_hist_1D(all_state, total_time, which_axes=None, frame_skip=20, nbins
     def animate(i):
         plt.cla()
         t_c = time[i]
-        ax.set_ylim([0, 1.2 * y_max])
         for j in range(len(which_axes)):
             counts, bins = np.histogram(coords[j][:, i], bins=nbins)
-            ax.hist(bins[:-1], bins, weights=counts, density=True)
+            hj = ax.hist(bins[:-1], bins, weights=counts, density=True)
             ax.set_xlim(lims)
+            y_max = np.max(hj[0])
             ax.set_ylim([0, 1.2 * y_max])
 
         txt.set_text('t={:.2f}'.format(t_c))
 
     ani = animation.FuncAnimation(fig, animate, interval=100, frames=len(time), blit=False)
-    return ani
+    return ani, fig, ax
 
 
     '''

@@ -59,7 +59,7 @@ def get_potential(simulation, trial_request=s_[:]):
     return PE
 
 def get_pos_EPT(simulation, trial_request=s_[:]):
-    """Gets generalized equipartition."""
+    """Gets positional equipartition."""
 
     t = simulation.current_time
     get_force = simulation.system.get_external_force
@@ -72,6 +72,7 @@ def get_pos_EPT(simulation, trial_request=s_[:]):
     return multiply(state, -F)
 
 def get_EPT(simulation, trial_request=s_[:]):
+    """Gets generalized equipartition."""
     t= simulation.current_time
     state = simulation.current_state[trial_request]
 
@@ -169,6 +170,7 @@ def get_dQ(simulation):
     V0 = potential(current_state, next_time)
     V1 = potential(next_state, next_time)
     V_diff = V1 - V0
+
 
     dQ = K_diff + V_diff
     return dQ

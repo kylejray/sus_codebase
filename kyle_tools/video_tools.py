@@ -54,3 +54,7 @@ def video_concat(vids, save_name='concat.mp4'):
     try: os.remove(save_name)
     except: pass
     ffmpeg.concat(*vids, v=1).output(save_name).run()
+
+    # SAVED FOR LATER
+    # ffmpeg -i out.mp4 -vf mpdecimate,setpts=N/FRAME_RATE/TB out_out2.mp4
+    # this command removes still frames, super useful. 

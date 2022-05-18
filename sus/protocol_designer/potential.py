@@ -38,6 +38,7 @@ class Potential:
         N_dim,
         default_params=None,
         relevant_domain=None,
+        conservative=True
     ):
         """
         potential: func
@@ -58,7 +59,7 @@ class Potential:
         """
 
         self.scale = 1
-        self.conservative = True
+        self.conservative = conservative
         self.pot = potential
         self.force = external_force
         self.N_params = N_params
@@ -97,7 +98,7 @@ class Potential:
         """
         return np.multiply(self.scale, self.force(*args, **kwargs))
 
-    def trivial_protocol(self, t_i=0, t_f=1):
+    def trivial_protocol(self, t_i=0., t_f=1.):
         """
         makes a trivial (all parameters held fixed) protocol that will work with this potential
 

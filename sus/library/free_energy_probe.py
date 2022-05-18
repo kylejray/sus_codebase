@@ -68,8 +68,8 @@ def odw_gaussian_force(x, params):
 
     return -d_U
 
-odwg_params = (-1, 1, 1, 1, 5, 5)
-odwg_domain = [[-5],[5]]
+odwg_params = (-1., 1., 1., 1., 5., 5.)
+odwg_domain = [[-5.],[5.]]
 
 odw_gaussian = Potential(odw_gaussian_pot, odw_gaussian_force, 6, 1, default_params=odwg_params, relevant_domain=odwg_domain)
 
@@ -110,8 +110,8 @@ def symm_quart_exp_force(x,params):
     d = quart_weight * d_quart + (1-quart_weight) * d_exponential
     return -d
 
-default = (2, 4, 1)
-dom = [[-3],[3]]
+default = (2., 4., 1.)
+dom = [[-3.],[3.]]
 
 symm_quart_exp_pot = Potential(symm_quart_exp_potential, symm_quart_exp_force, 3, 1, default_params=default, relevant_domain=dom)
 

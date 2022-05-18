@@ -4,29 +4,31 @@ import json
 import numpy as np
 import datetime
 
-def jsonify(data):
-    if not isinstance(data, dict):
-        data = {type(data):data}
+def jsonify(data):    
     json_data = dict()
     for key, value in data.items():
-        if isinstance(value, list) or isinstance(value, tuple): # for lists and tuples
-            value = [ jsonify(item) if isinstance(item, dict) else item for item in value ]
-        if isinstance(value, dict): # for nested lists
-            value = jsonify(value)
+        value = jsonify_val(value)
         if isinstance(key, int): # if key is integer: > to string
             key = str(key)
-        if isinstance(value,datetime.datetime):
-            value = f"{value}"
-        if type(value).__module__=='numpy': # if value is numpy.*: > to python list
-            value = value.tolist()
-        if type(value)==range: # if value is range > to python list
-            value = str(value)
-        if isinstance(value, slice):
-            value = str(value)
-            
         json_data[key] = value
 
     return json_data
+
+def jsonify_val(value):
+    if isinstance(value, list) or isinstance(value, tuple): # for lists and tuples
+        value = [ jsonify(item) if isinstance(item, dict) else jsonify_val(item) for item in value ]
+    if isinstance(value, dict): # for nested lists
+        value = jsonify(value)
+    if isinstance(value,datetime.datetime):
+        value = f"{value}"
+    if type(value).__module__=='numpy': # if value is numpy.*: > to python list
+        value = {'json_array':value.tolist()}
+    if type(value)==range: # if value is range > to python list
+        value = str(value)
+    if isinstance(value, slice):
+        value = str(value)
+    return value
+    
 
 def open_json(file_path):
     with open(file_path, 'r') as f:
@@ -35,13 +37,16 @@ def open_json(file_path):
 
 
 def save_as_json(input_dict, name=None, dir=None):
+    now = datetime.datetime.now()
+
     if 'save_date' not in input_dict.keys():
-        now = datetime.datetime.now()
+        
         input_dict['save_date'] = now
     if dir is None:
         dir = f"./{now.year-2000}_{now.month:02d}_{now.day:02d}/"
     if not os.path.exists(dir):
         os.makedirs(dir)
+
     save_dict = jsonify(input_dict)
 
     if name is None:
@@ -52,6 +57,17 @@ def save_as_json(input_dict, name=None, dir=None):
         json.dump(save_dict, fout)
     print('\n saved as json')
     return
+
+def time_func(func, args, return_time=True):
+    initial = datetime.datetime.now()
+    out = func(*args)
+    final = datetime.datetime.now()
+    if return_time == True:
+        return out, final-initial
+    else:
+        print(f'duration: {(final-initial)}')
+        return out
+
 
 
 
@@ -68,25 +84,28 @@ def file_list(directory, prefix_list=[''], extension_list=['.json']):
     return [directory+f for f in file_list]
 
 
-'''
-WIP
 def numpify(data):
-    np_data = dict()
+    np_data={}
     for key, value in data.items():
-        if isinstance(value, list): # for lists
-            value = [ numpify(item) if isinstance(item, dict) else item for item in value ]
-        if isinstance(value, dict): # for nested lists
-            value = numpify(value)
-        if isinstance(key, int): # if key is integer: > to string
-            key = str(key)
-        if type(value)==float: # if value is float: > to numpy array
-            value = value.tolist()
+        if key=='json_array':
+            return np.array(value)
+        else:
+            value = numpify_val(value)
+
         np_data[key] = value
-    return json_data
-'''
+    return np_data
+
+def numpify_val(value):
+    if isinstance(value, list) or isinstance(value, tuple): # for lists and tuples
+        value = [ numpify(item) if isinstance(item, dict) else numpify_val(item) for item in value ]
+    if isinstance(value, dict): # for nested lists
+        value = numpify(value)
+
+    return value
+
+
 
 '''
-
 def check_jsonable(d, dictionary=True):
      ...:     if dictionary:
      ...:         for key, value in d.items():

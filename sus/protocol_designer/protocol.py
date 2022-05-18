@@ -53,24 +53,28 @@ class Protocol:
             gives the value of each parameter at the input time
 
         """
+        kwargs = {}
         if self.interpolation == 'linear':
             interpolate = self.get_linear
         if self.interpolation == 'step':
             interpolate = self.get_step
+        if self.interpolation == 'end_step':
+            interpolate = self.get_step
+            kwargs['type'] = 'right'
         if self.interpolation == 'sigmoid':
             interpolate = self.get_sigmoid
 
         if t < self.t_i:
 
-            return interpolate(self.params[:, 0], self.params[:, 1], self.t_i)
+            return interpolate(self.params[:, 0], self.params[:, 1], self.t_i, **kwargs)
 
         if self.t_f < t:
 
-            return interpolate(self.params[:, 0], self.params[:, 1], self.t_f)
+            return interpolate(self.params[:, 0], self.params[:, 1], self.t_f, **kwargs)
 
         if self.t_i <= t and t <= self.t_f:
 
-            return interpolate(self.params[:, 0], self.params[:, 1], t)
+            return interpolate(self.params[:, 0], self.params[:, 1], t, **kwargs)
 
     def time_shift(self, dt):
         """
@@ -224,11 +228,15 @@ class Protocol:
         t_scaled = (t-self.t_i)/(self.t_f-self.t_i)-.5
         return init + delta_y / (1 + np.exp( -ramp * t_scaled))
 
-    def get_step(self, init, final, t):
+    def get_step(self, init, final, t, type='left'):
         """
         basic step function interpolation function, used internally by other methods
         """
-        return init + (final-init) * np.heaviside(t-self.t_f, 1)
+        if type == 'left':
+            return init + (final-init) * np.heaviside(t-self.t_i, 0)
+        if type == 'right':
+            return init + (final-init) * np.heaviside(t-self.t_f, 1)
+
 
 
 
