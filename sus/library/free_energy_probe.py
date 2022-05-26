@@ -23,11 +23,9 @@ def quart_gauss_potential(x, params):
 
     gauss = ew_1D(x, depth, x_0, local) + ew_1D(ew_1D(x, depth, -x_0, local)
 '''
-    
+
+'''    
 def odw_gaussian_pot(x, params):
-    '''
-    x_0, x_1, d_0, d_1, local_0, local_1 = params
-    '''
     x_0, x_1, d_0, d_1, local_0, local_1 = params
 
     z_gauss = ew_1D(x, d_0, x_0, local_0)
@@ -73,6 +71,67 @@ odwg_domain = [[-5.],[5.]]
 
 odw_gaussian = Potential(odw_gaussian_pot, odw_gaussian_force, 6, 1, default_params=odwg_params, relevant_domain=odwg_domain)
 
+'''
+
+def linear_stability(x, params, deriv=False):
+    x_0, L, d = params
+    xc = x_0+np.sign(x_0)/np.sqrt(2*L)
+    slope= d * np.sqrt(2*L/ np.e) * np.sign(x_0)
+    y_0 = -d/np.sqrt(np.e)
+    if deriv:
+        return slope
+    else:
+        return slope*(x-xc) + y_0
+
+
+def quartic_stability(x, params, deriv=False):
+    x_0, L, d = params
+    a = L**2/np.sqrt(np.e)
+    c = 5/(4*np.sqrt(np.e))
+    if deriv:
+        return 4*d*a*(x-x_0)**3
+    else:
+        return d*(a*(x-x_0)**4 - c)
+
+def odw_gaussian_pot(x, params):
+
+    x_0, x_1, d_0, d_1, local_0, local_1 = params
+
+    z_gauss = ew_1D(x, d_0, x_0, local_0)
+    o_gauss = ew_1D(x, d_1, x_1, local_1)
+
+    x_m, x_p = x_0-1/np.sqrt(2*local_0), x_1+1/np.sqrt(2*local_1)
+    s_values = [[x_0, local_0, d_0], [x_1, local_1, d_1]]
+    
+    stab = [ quartic_stability(x, item)  for item in s_values]
+
+    stability = np.heaviside(-x+x_m, 0)*stab[0] + np.heaviside(x-x_p, 0)*stab[1]
+
+    U = np.heaviside(x-x_m, 0) * np.heaviside(-x+x_p, 0)*(z_gauss+o_gauss) + stability
+
+    return U
+
+def odw_gaussian_force(x, params):
+    x_0, x_1, d_0, d_1, local_0, local_1 = params
+
+    z_gauss = ew_1D_deriv(x, d_0, x_0, local_0)
+    o_gauss = ew_1D_deriv(x, d_1, x_1, local_1)
+
+    x_m, x_p = x_0-1/np.sqrt(2*local_0), x_1+1/np.sqrt(2*local_1)
+    s_values = [[x_0, local_0, d_0], [x_1, local_1, d_1]]
+    
+    stab = [ quartic_stability(x, item, deriv=True)  for item in s_values]
+
+    stability = np.heaviside(-x+x_m, 0)*stab[0] + np.heaviside(x-x_p, 0)*stab[1]
+
+    d_U = np.heaviside(x-x_m, 0) * np.heaviside(-x+x_p, 0)*(z_gauss+o_gauss) + stability
+
+    return -d_U
+
+odwg_params = (-1., 1., 1., 1., 5., 5.)
+odwg_domain = [[-5.],[5.]]
+
+odw_gaussian = Potential(odw_gaussian_pot, odw_gaussian_force, 6, 1, default_params=odwg_params, relevant_domain=odwg_domain)
 
 
 def symm_quart_exp_potential(x, params):

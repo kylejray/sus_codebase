@@ -58,6 +58,21 @@ def get_potential(simulation, trial_request=s_[:]):
 
     return PE
 
+def get_time_constant_work(simulation, trial_request=s_[:]):
+    """Gets potential energy."""
+
+    t = simulation.current_time
+    get_PE = simulation.system.get_potential
+    get_reference_PE = simulation.reference_system.get_potential
+    state = simulation.current_state[trial_request]
+    init_state = simulation.initial_state[trial_request]
+
+    W_off = get_reference_PE(state,t) - get_PE(state, t)
+    W_on =  get_PE(init_state, 0) - get_reference_PE(init_state, 0)
+
+    return W_on + W_off
+
+
 def get_pos_EPT(simulation, trial_request=s_[:]):
     """Gets positional equipartition."""
 

@@ -1,4 +1,4 @@
-from numpy import empty, s_, histogramdd, mean, shape, array, average
+from numpy import empty, s_, histogramdd, mean, shape, array, average, sign
 from scipy.stats import sem
 
 
@@ -98,6 +98,7 @@ class MeasureAllState(SimProcedure):
 
     def do_intermediate_task(self):
 
+
         next_step = self.simulation.current_step + 1
 
         try:
@@ -115,6 +116,9 @@ class MeasureAllState(SimProcedure):
             pass
 
     def do_final_task(self):
+        step_indices = range(self.simulation.nsteps + 1)[self.step_request]
+        self.all_state['step_indices'] = step_indices
+        self.all_state['states'] = self.all_state['states'][:, :len(step_indices), ...]
 
         return self.all_state
 
@@ -177,6 +181,9 @@ class MeasureStepValue(SimProcedure):
             pass
         
     def do_final_task(self):
+        step_indices = range(self.simulation.nsteps + 1)[self.step_request]
+        self.all_value['step_indices'] = step_indices
+        self.all_values['values'] = self.all_values['values'][:len(step_indices)]
 
         return self.all_value
 
@@ -194,10 +201,33 @@ class MeasureMeanValue(MeasureStepValue):
         self.trial_request = trial_request
     
     def do_final_task(self):
-        self.all_value['std_error'] = self.all_value['values'][:,1,...]
-        self.all_value['values'] = self.all_value['values'][:,0,...]
+        step_indices = range(self.simulation.nsteps + 1)[self.step_request]
+        nvals = len(step_indices)
+        self.all_value['step_indices'] = step_indices
+        self.all_value['std_error'] = self.all_value['values'][:nvals,1,...]
+        self.all_value['values'] = self.all_value['values'][:nvals,0,...]
         
         return self.all_value
+
+class TerminateOnMean(MeasureMeanValue):
+    def __init__(self, get_value, target=1, **kwargs):
+        kw_args = {'output_name':'all_value', 'step_request':s_[:], 'trial_request':s_[:], 'weights':None}
+        kw_args.update(kwargs)
+        MeasureMeanValue.__init__(self, get_value, **kwargs)
+        self.target=target
+
+    def do_intermediate_task(self):
+        try:
+            next_step = self.simulation.current_step + 1
+            step_indices = self.all_value['step_indices']
+            step_index = step_indices.index(next_step)
+            MeasureMeanValue.do_intermediate_task(self,)
+            c_val = self.all_value['values'][step_index-1, 0, ...]
+            next_val = self.all_value['values'][step_index, 0, ...]
+            if sign(c_val-self.target) != sign(next_val-self.target):
+                self.terminate = True
+        except:
+            pass
 
 
 class MeasureAllStateDists(SimProcedure):

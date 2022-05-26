@@ -97,6 +97,11 @@ class Simulation:
 
             if verbose:
                 print("\r step {} of {} complete".format(step+1, nsteps),end="")
+            if any( [p.terminate for p in procedures if hasattr(p,'terminate')] ):
+                self.final_time = time+dt
+                self.nsteps = step
+                break
+
                 
                 
 

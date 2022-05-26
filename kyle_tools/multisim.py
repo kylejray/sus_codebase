@@ -1,4 +1,5 @@
 from .utilities import save_as_json
+import datetime
 
 class SimManager:
 
@@ -9,6 +10,8 @@ class SimManager:
         pass
 
     def run_sim(self, **kwargs):
+        self.save_dict={}
+        self.save_dict['start_date'] = datetime.datetime.now()
         print('\n initializing...')
         self.initialize_sim()
         print('\n running sim...')
@@ -20,7 +23,6 @@ class SimManager:
         self.params.update(param_dict)
 
     def run_save_procs(self):
-        self.save_dict={}
         for item in self.save_procs:
             item.run(self,)
     
