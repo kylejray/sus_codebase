@@ -133,6 +133,54 @@ odwg_domain = [[-5.],[5.]]
 
 odw_gaussian = Potential(odw_gaussian_pot, odw_gaussian_force, 6, 1, default_params=odwg_params, relevant_domain=odwg_domain)
 
+def lintilt_gaussian_pot(x, params):
+
+    x_0, x_1, d_0, d_1, local_0, local_1 = params
+
+    tilt = (d_1-d_0) / (x_1-x_0)
+    depth_0 = np.mean([d_0,d_1])
+    depth_1 = depth_0
+
+    z_gauss = ew_1D(x, depth_0, x_0, local_0)
+    o_gauss = ew_1D(x, depth_1, x_1, local_1)
+
+    x_m, x_p = x_0-1/np.sqrt(2*local_0), x_1+1/np.sqrt(2*local_1)
+    s_values = [[x_0, local_0, depth_0], [x_1, local_1, depth_1]]
+    
+    stab = [ quartic_stability(x, item)  for item in s_values]
+
+    stability = np.heaviside(-x+x_m, 0)*stab[0] + np.heaviside(x-x_p, 0)*stab[1]
+
+    U = -tilt*x + np.heaviside(x-x_m, 0) * np.heaviside(-x+x_p, 0)*(z_gauss+o_gauss) + stability
+
+    return U
+
+def lintilt_gaussian_force(x, params):
+    x_0, x_1, d_0, d_1, local_0, local_1 = params
+
+    tilt = (d_1-d_0) / (x_1-x_0)
+    depth_0 = np.mean([d_0,d_1])
+    depth_1 = depth_0
+
+    z_gauss = ew_1D_deriv(x, depth_0, x_0, local_0)
+    o_gauss = ew_1D_deriv(x, depth_1, x_1, local_1)
+
+    x_m, x_p = x_0-1/np.sqrt(2*local_0), x_1+1/np.sqrt(2*local_1)
+    s_values = [[x_0, local_0, depth_0], [x_1, local_1, depth_1]]
+    
+    stab = [ quartic_stability(x, item, deriv=True)  for item in s_values]
+
+    stability = np.heaviside(-x+x_m, 0)*stab[0] + np.heaviside(x-x_p, 0)*stab[1]
+
+    d_U = -tilt + np.heaviside(x-x_m, 0) * np.heaviside(-x+x_p, 0)*(z_gauss+o_gauss) + stability
+
+    return -d_U
+
+ltg_params = (-1., 1., 1., 1., 5., 5.)
+ltg_domain = [[-1.],[1.]]
+
+lintilt_gaussian = Potential(lintilt_gaussian_pot, lintilt_gaussian_force, 6, 1, default_params=ltg_params, relevant_domain=ltg_domain)
+
 
 def symm_quart_exp_potential(x, params):
     '''
