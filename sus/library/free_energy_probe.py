@@ -177,7 +177,7 @@ def lintilt_gaussian_force(x, params):
     return -d_U
 
 ltg_params = (-1., 1., 1., 1., 5., 5.)
-ltg_domain = [[-1.],[1.]]
+ltg_domain = [[-3.],[3.]]
 
 lintilt_gaussian = Potential(lintilt_gaussian_pot, lintilt_gaussian_force, 6, 1, default_params=ltg_params, relevant_domain=ltg_domain)
 
