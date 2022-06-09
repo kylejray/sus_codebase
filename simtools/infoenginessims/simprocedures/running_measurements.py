@@ -11,13 +11,13 @@ def get_current_state(simulation, trial_request=s_[:]):
     
     return simulation.current_state[trial_request]
 
-def get_dW(simulation):
+def get_dW(simulation, trial_request=s_[:]):
     """Gets step change in inclusive work."""
 
     time = simulation.current_time
     dt = simulation.dt
     get_potential = simulation.system.get_potential
-    state = simulation.current_state
+    state = simulation.current_state[trial_request]
 
     dpotential = get_potential(state, time + dt) - get_potential(state, time)
 
