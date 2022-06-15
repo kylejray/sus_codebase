@@ -1,5 +1,7 @@
 from .utilities import save_as_json
 import datetime
+import random
+import numpy as np
 
 class SimManager:
 
@@ -21,6 +23,22 @@ class SimManager:
 
     def change_params(self, param_dict):
         self.params.update(param_dict)
+    
+    
+    def perturb_params(self, std=.1, n=1, which_params=None):
+        if which_params is None:
+            which_params = list(self.params)
+        keys = random.choices(which_params, k=n)
+        for key in keys:
+            bool = True
+            while bool:
+                current_val = self.params[key]
+                new_val = np.random.normal(current_val, std*current_val)
+                if self.verify_param(key, new_val):
+                    self.change_params({key:new_val})
+                    bool = False
+    
+
 
     def run_save_procs(self):
         for item in self.save_procs:

@@ -1,4 +1,5 @@
-from numpy import empty, zeros, multiply, s_, append, einsum
+from numpy import empty, zeros, multiply, s_, append, einsum, average
+from scipy.stats import sem
 
 # from infoenginessims.simprocedures.basic_simprocedures import SimProcedure
 from .basic_simprocedures import SimProcedure
@@ -29,8 +30,8 @@ def get_dE(simulation, trial_request=s_[:]):
     time = simulation.current_time
     dt = simulation.dt
     get_energy = simulation.system.get_potential
-    state = simulation.current_state
-    next_state = simulation.next_state
+    state = simulation.current_state[trial_request]
+    next_state = simulation.next_state[trial_request]
 
     dE = get_energy(next_state, time + dt) - get_energy(state, time)
 
@@ -194,7 +195,7 @@ def get_dQ(simulation):
 class KeepNextValue(SimProcedure):
     """Keeps the current step's next value."""
 
-    def __init__(self, get_dvalue, output_name):
+    def __init__(self, get_dvalue, output_name='running_value'):
 
         self.get_dvalue = get_dvalue
         self.output_name = output_name
@@ -233,6 +234,39 @@ class MeasureAllValue(KeepNextValue):
     
     def do_final_task(self):
         return self.all_value
+
+class MeasureRunningMean(KeepNextValue):
+
+    """Returns values for each step."""
+    def __init__(self, get_dvalue, output_name='running_mean', step_request=s_[:], trial_request=s_[:]):
+
+        self.get_dvalue = get_dvalue
+        self.output_name = output_name
+        self.step_request = step_request
+        self.trial_request = trial_request
+
+    def do_initial_task(self, simulation):
+
+        KeepNextValue.do_initial_task(self, simulation)
+
+        self.all_value = []
+        values = self.next_value[self.trial_request]
+        self.all_value.append([average(values), sem(values) ])
+
+    def do_intermediate_task(self):
+
+        super().do_intermediate_task()
+
+        step_indices = range(self.simulation.nsteps + 1)[self.step_request]
+        step = self.simulation.current_step
+        if step in step_indices:
+            values = self.next_value[self.trial_request]
+            self.all_value.append([average(values), sem(values) ])
+    
+    def do_final_task(self):
+        means = [ av[0] for av in self.all_value]
+        std_err = [ av[1] for av in self.all_value]
+        return {'values':means,'std_error':std_err,'step_request':self.step_request}
 
 class MeasureFinalValue(KeepNextValue):
     """Returns the final value."""
