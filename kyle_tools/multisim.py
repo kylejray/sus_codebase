@@ -37,10 +37,11 @@ class SimManager:
                 if self.verify_param(key, new_val):
                     self.change_params({key:new_val})
                     bool = False
-    
 
 
     def run_save_procs(self):
+        if not hasattr(self, 'save_dict'):
+            self.save_dict={}
         for item in self.save_procs:
             item.run(self,)
     
