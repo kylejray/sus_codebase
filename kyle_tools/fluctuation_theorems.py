@@ -1,6 +1,7 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.stats import sem
 
 
 def w_TUR(initial_state, final_state, mean_work, current_function=None):
@@ -13,6 +14,27 @@ def w_TUR(initial_state, final_state, mean_work, current_function=None):
     bound = 2/(np.exp(mean_work)-1)
 
     return bound, scaled_var
+
+def ft_moment(sigma, moment, condition=None):
+    '''
+    returns moentis of a distribution, if the distribution obeys the ft p(-x)=e^(-x)p(x) then the conditions sigma>0 or sigma<0 can be included in order to give the moments using just positive or just negative pieces of the distribution and inferring the other half to be consistant with the FT.
+    '''
+    N = len(sigma)
+    mean = 0
+
+    if condition is None:
+        if moment > 1:
+            mean = np.mean(sigma)
+        f_sigma = (sigma-mean)**moment
+
+    if condition is not None:
+        c_sigma = sigma[condition]
+        Nc = len(c_sigma)
+        if moment > 1:
+            mean = ft_moment(sigma, 1, condition=condition)[0]
+        f_sigma = (Nc/N) * ( (c_sigma-mean)**moment + (-c_sigma-mean)**moment * np.exp(-c_sigma))
+
+    return [ np.mean(f_sigma), sem(f_sigma) ]
 
     
 def crooks_analysis_tsp(work, nbins=25, beta=1, low_stats=True):

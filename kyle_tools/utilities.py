@@ -172,7 +172,7 @@ def inv_xtanhx(arg, tol=.001, max_iterations=10):
         else:
             steps = steps*2
             i+=1
-    return output  
+    return output[0]  
 
 from sklearn.neighbors import KernelDensity
 
