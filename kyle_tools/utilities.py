@@ -148,6 +148,8 @@ def get_size(obj, seen=None):
     return size/ 1024**2
 
 def inv_xtanhx(arg, tol=.001, max_iterations=10):
+    if arg is np.nan:
+        return np.nan
     if np.isclose(abs(arg), arg*np.tanh(arg), atol=tol):
         return abs(arg)
 
