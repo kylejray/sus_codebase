@@ -429,7 +429,7 @@ def even_parity_1D_well_force(x, params):
     return -4 * a * x ** 3 - 2 * (b/2) * x
 
 
-even_1DW_defaults = (1, -8)
+even_1DW_defaults = [1, -8]
 even_1DW = Potential(even_parity_1D_well, even_parity_1D_well_force, 2, 1, default_params=even_1DW_defaults)
 
 
