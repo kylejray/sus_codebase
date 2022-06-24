@@ -7,7 +7,7 @@ import matplotlib.animation as animation
 from .info_space import separate_by_state
 
 
-rc_dict = {'font.size':16, 'axes.labelsize':'large', 'ytick.right':False,'legend.loc':'upper right', 'legend.fontsize':'xx-small', 'figure.autolayout':True, 'figure.figsize': (3.5,3.5), 'mathtext.fontset':'stix', 'font.family':'STIXGeneral'}
+rc_dict = {'font.size':16, 'axes.labelsize':'large', 'ytick.right':False,'legend.loc':'upper right', 'legend.fontsize':'xx-small', 'figure.autolayout':True, 'figure.figsize': (10,10), 'mathtext.fontset':'stix', 'font.family':'STIXGeneral'}
 
 
 def animate_sim_old(all_state, total_time, frame_skip=30, which_axes=None, axes_names=None, color_by_state=None, key_state=None, color_key=None, legend=True, alpha=None, fig_ax=None):

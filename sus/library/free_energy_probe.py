@@ -242,16 +242,16 @@ def pwl_double_well(params):
     dx=.05
     def x_points(params):
         x0, x1, d0, d1, w0, w1, _ = params
-        left_well = [x0-w0/2-dx, x0-w0/2, x0+w0/2, x0+w0/2+dx]
-        right_well = [x1-w1/2-dx, x1-w1/2, x1+w1/2, x1+w1/2+dx]
+        left_well = [x0-w0/2-dx, x0-w0/2, x0+w0/2, (x0+w0/2)*.975]
+        right_well = [(x1-w1/2)*.975, x1-w1/2, x1+w1/2, x1+w1/2+dx]
         return left_well + right_well
 
     def y_points(params):
         x0, x1, d0, d1, w0, w1, tilt = params
         slope=tilt/(x1-x0)
         if slope==0:
-            left_well = [d0+k*dx, -d0, -d0, k*dx ]
-            right_well = [d1+k*dx, -d1, -d1, k*dx ][::-1]
+            left_well = [d0+k*dx, -d0, -d0, 0 ]
+            right_well = [d1+k*dx, -d1, -d1, 0 ][::-1]
         else:
             left_well = [d0+k*dx, slope*w0/2, -slope*w0/2, -slope*(w0/2+dx) ]
             right_well = [-(x1-x0-w1/2-dx)*slope, -(x1-x0-w1/2-dx)*slope-d1, -(x1-x0-w1/2-dx)*slope-d1, d1+k*dx  ]
@@ -264,7 +264,6 @@ def pwl_dw_potential(x, params):
     return U(x)
 
 def pwl_dw_force(x, params):
-    tilt = params[-1]
     U = pwl_double_well(params)
     dU = U.derivative()
     return -dU(x)
