@@ -30,10 +30,12 @@ class SimManager:
             which_params = list(self.params)
         keys = random.choices(which_params, k=n)
         for key in keys:
+            i=0
             if verbose:
                 print(f'changing param{key}')
             bool = True
-            while bool:
+            while bool and i < 1_000:
+                i += 1
                 current_val = self.params[key]
                 new_val = np.random.normal(current_val, std*current_val)
                 if verbose:
@@ -46,6 +48,8 @@ class SimManager:
                 else:
                     if verbose:
                         print('failure')
+            if i >= 1_000:
+                print(f'gave up on param {key} after {i} tries')
 
 
 
