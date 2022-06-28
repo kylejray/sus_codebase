@@ -25,18 +25,28 @@ class SimManager:
         self.params.update(param_dict)
     
     
-    def perturb_params(self, std=.1, n=1, which_params=None):
+    def perturb_params(self, std=.1, n=1, which_params=None, verbose=False):
         if which_params is None:
             which_params = list(self.params)
         keys = random.choices(which_params, k=n)
         for key in keys:
+            if verbose:
+                print(f'changing param{key}')
             bool = True
             while bool:
                 current_val = self.params[key]
                 new_val = np.random.normal(current_val, std*current_val)
+                if verbose:
+                    print(f'trial_value: {new_val}')
                 if self.verify_param(key, new_val):
                     self.change_params({key:new_val})
                     bool = False
+                    if verbose:
+                        print('sucess')
+                else:
+                    if verbose:
+                        print('failure')
+
 
 
     def run_save_procs(self):
