@@ -563,6 +563,11 @@ def symmetric_exp_wells_3D_force(x, y, z, params):
 
 symm_3D_wells = Potential(symmetric_exp_wells_3D_pot, symmetric_exp_wells_3D_force, 3, 3, default_params=(10, 1, 8))
 
+def fg_helper(x, l, d, dx=False):
+    a, b = d/l**4, 4*d/l**2
+    if dx:
+        return 4*a*x**3 - b*x
+    return a*x**4 - b * x**2 /2
 
 def fredkin_flip_pot(x, y, z, params):
     """
@@ -586,8 +591,8 @@ def fredkin_flip_pot(x, y, z, params):
     yp = (y-z)/r2
     zp = (y+z)/r2
 
-    U0 = a*(x**4 + y**4 + z**4) + b*(x**2 + y**2 + z**2)
-    U1 = U0 + s*(-a * (y**4 + z**4) - b * (y**2 + z**2) + k*(yp**2/2 + 2*zp**2))
+    U0 = a*(x**4 + y**4 + z**4) + b*(x**2 + y**2 + z**2)/2
+    U1 = U0 + s*(-a * (y**4 + z**4) - b * (y**2 + z**2)/2 + k*(yp**2/2 + 2*zp**2))
 
     return np.heaviside(-x, 0) * U0 + np.heaviside(x, 0) * U1
 
@@ -601,20 +606,83 @@ def fredkin_flip_force(x, y, z, params):
     yp = (y-z)/r2
     zp = (y+z)/r2
 
-    U0_dx = 4*a*(x**3) + 2*b*x
-    U0_dy = 4*a*(y**3) + 2*b*y
-    U0_dz = 4*a*(z**3) + 2*b*z
+    U0_dx = 4*a*(x**3) + b*x
+    U0_dy = 4*a*(y**3) + b*y
+    U0_dz = 4*a*(z**3) + b*z
     U1_dx = U0_dx
-    U1_dy = U0_dy + s * (-4 * a * y**3 - 2 * b * y + k * (yp/r2 + 4*zp/r2))
-    U1_dz = U0_dz + s * (-4 * a * z**3 - 2 * b * z + k * (-yp/r2 + 4*zp/r2))
+    U1_dy = U0_dy + s * (-4 * a * y**3 -  b * y + k * (yp/r2 + 4*zp/r2))
+    U1_dz = U0_dz + s * (-4 * a * z**3 -  b * z + k * (-yp/r2 + 4*zp/r2))
 
     fx = -np.heaviside(-x, 0) * U0_dx - np.heaviside(x, 0) * U1_dx
     fy = -np.heaviside(-x, 0) * U0_dy - np.heaviside(x, 0) * U1_dy
     fz = -np.heaviside(-x, 0) * U0_dz - np.heaviside(x, 0) * U1_dz
 
-    return (fx, fy, fz)
+    return [fx, fy, fz]
 
 
-fp_def_param = (2, -16, 0, 0)
-fp_domain = ((-3, -3, -3), (3, 3, 3))
+fp_def_param = [2, -16, 0, 0]
+fp_domain = [[-2, -2, -2], [2, 2, 2]]
 fredkin_pot = Potential(fredkin_flip_pot, fredkin_flip_force, 4, 3, default_params=fp_def_param, relevant_domain=fp_domain)
+
+
+
+def fredkin_cheat_pot(x, y, z, params):
+    """
+    3D 8-well potential. Used to implement a fredkin gate
+
+    Parameters
+    ----------
+    x: ndarray of dimension [N,]
+        the x coordinates for N positions
+    params: list/tuple (1, 2, 3, 4)
+        1, 2, 3, 4 : 1,2 are the coefficients of the 4th and 2nd order terms in the storage potential
+                     3 turns off the y-z subspace storage potential fir x>0. Should genrally be 0(storage on) or 1(storage off)
+                     4 is the k-value of the computational potential that implements the swap (like spring contant k)
+
+    Returns
+    -------
+    the value of the potential at locations x,y with the given params
+    """
+    a, b, s, k,  = params
+    r2 = np.sqrt(2)
+    yp = (y-z)/r2
+    zp = (y+z)/r2
+
+    l, d = r2*np.sqrt(abs(b)/(4*a)), b**2/(16*a)
+    U_zp = np.heaviside(-zp,.5)*fg_helper(zp+l/2,l/2,d) + np.heaviside(zp,.5)*fg_helper(zp-l/2,l/2,d) 
+
+    U0 = a*(x**4 + y**4 + z**4) + b*(x**2 + y**2 + z**2)/2
+    U1 = U0 + s*(-a * (y**4 + z**4) - b * (y**2 + z**2)/2 + k*yp**2/2 + U_zp)
+
+    return np.heaviside(-x, 0) * U0 + np.heaviside(x, 0) * U1
+
+
+def fredkin_cheat_force(x, y, z, params):
+    '''
+    see docs for fredkin_flip_pot
+    '''
+    a, b, s, k = params
+    r2 = np.sqrt(2)
+    yp = (y-z)/r2
+    zp = (y+z)/r2
+
+    l, d = r2*np.sqrt(abs(b)/(4*a)), b**2/(16*a)
+    dU_zp = np.heaviside(-zp,.5)*(fg_helper(zp+l/2,l/2,d, dx=True)+d) + np.heaviside(zp,.5)*(fg_helper(zp-l/2,l/2,d,dx=True)+d)
+
+    U0_dx = 4*a*(x**3) + b*x
+    U0_dy = 4*a*(y**3) + b*y
+    U0_dz = 4*a*(z**3) + b*z
+    U1_dx = U0_dx
+    U1_dy = U0_dy + s * (-4 * a * y**3 -  b * y + k * (yp/r2) + dU_zp/r2)
+    U1_dz = U0_dz + s * (-4 * a * z**3 -  b * z + k * (-yp/r2) + dU_zp/r2)
+
+    fx = -np.heaviside(-x, 0) * U0_dx - np.heaviside(x, 0) * U1_dx
+    fy = -np.heaviside(-x, 0) * U0_dy - np.heaviside(x, 0) * U1_dy
+    fz = -np.heaviside(-x, 0) * U0_dz - np.heaviside(x, 0) * U1_dz
+
+    return [fx, fy, fz]
+
+
+fp_def_param = [2, -16, 0, 0]
+fp_domain = [[-1.5, -1.5, -1.5], [1.5, 1.5, 1.5]]
+fredkin_cheat_pot = Potential(fredkin_cheat_pot, fredkin_cheat_force, 4, 3, default_params=fp_def_param, relevant_domain=fp_domain)

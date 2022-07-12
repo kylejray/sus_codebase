@@ -176,12 +176,11 @@ class System:
         time t.
 
         '''
-        if self.potential.N_dim >= 3 and (axes is None or len(axes) > 3):
+        if self.potential.N_dim >= 4 and (axes is None or len(axes) > 4):
             if resolution > 100:
-                print('using a lower resolution for searching a space in >2 dimensions')
-                if self.potential.N_dim == 3:
-                    resolution = 100
-                if self.potential.N_dim >= 4:
+                print('using a lower resolution for searching a space in >3 dimensions')
+
+                if self.potential.N_dim > 4:
                     resolution = 20
                 print('new resolution is {}'.format(resolution))
 
