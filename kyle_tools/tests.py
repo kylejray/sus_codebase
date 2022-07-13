@@ -1,4 +1,5 @@
 from .utilities import *
+from .multisim import *
 import numpy as np
 
 
@@ -29,5 +30,51 @@ def test_numpify():
     assert numpify(dj) == d
 
 
-    
+class SimManagerTest(SimManager):
+    def __init__(self):
+        self.params = {k:v for k,v in zip(['position','sigma'], [1,.2])}
+        self.save_name = [None,'./test_output/']
+        self.save_procs = [SaveSimOutput()]
 
+    def initialize_sim(self):
+        mu = self.params['position']
+        sigma = self.params['sigma_scale']
+        self.sim = GaussianGenerator(mu, sigma)
+        return 
+
+    def analyze_output(self):
+        pass
+
+    def verify_param(self, key, val):
+        if key == 'position':
+            return True
+        if key == 'sigma_scale':
+            return 0 < val
+
+
+class SaveSimOutput():
+    def run(self,SimManager):
+        SimManager.save_dict.update({'output':SimManager.sim.output})
+
+class GaussianGenerator():
+    def __init__(self, mu, sigma):
+        self.mu = mu
+        self.sigma= sigma
+    def run(self):
+        return np.random.normal(self.mu, self.sigma, np.shape(self.mu))
+
+space_filler = FillSpace(SimManagerTest(), param_keys=['position'])
+
+def trunc_func(val):
+    try:
+        return all([abs(v-1) < 1 for v in val])
+    except TypeError:
+        val = [val]
+        return all([abs(v-1) < 1 for v in val])
+
+def val_func(simrun):
+    return simrun.sim.output
+
+
+setattr(space_filler, 'truncate_val', trunc_func)
+setattr(space_filler, 'get_val', val_func)

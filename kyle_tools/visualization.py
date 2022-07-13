@@ -105,7 +105,7 @@ def animate_sim_old(all_state, total_time, frame_skip=30, which_axes=None, axes_
         z_lim = (np.min(z), np.max(z))
 
         ax.set(xlim=x_lim, ylim=y_lim, zlim=z_lim, xlabel=names[0], ylabel=names[1], zlabel=names[2])
-        txt = ax.suptitle('t={:.2f}'.format(0))
+        #txt = ax.suptitle('t={:.2f}'.format(0))
 
         def animate(i):
             index = int(samples[i])
@@ -119,7 +119,7 @@ def animate_sim_old(all_state, total_time, frame_skip=30, which_axes=None, axes_
                 for i, key in enumerate(state_lookup):
                     scat[i]._offsets3d = (x_i[state_lookup[key]], y_i[state_lookup[key]], z_i[state_lookup[key]])
 
-            txt.set_text('t={:.2f}'.format(t_c))
+            #txt.set_text('t={:.2f}'.format(t_c))
 
     ani = animation.FuncAnimation(fig, animate, interval=100, frames=len(samples), blit=False)
 
@@ -356,7 +356,7 @@ def animate_hist_1D(all_state, total_time, which_axes=None, frame_skip=20, nbins
         coords.append(all_state[item])
 
     if lims is None:
-        lims = [np.min(coords), np.max(coords)]
+        lims = [np.min(np.array(coords)), np.max(np.array(coords))]
 
     fig, ax = plt.subplots(figsize=(10, 10))
     txt = ax.text(0, 2, '{:.2f}'.format(0), verticalalignment='bottom')
