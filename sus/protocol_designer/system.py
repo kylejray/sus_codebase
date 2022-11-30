@@ -241,6 +241,19 @@ class System:
 
         return state
 
+
+    def check_local_eq(self, state, t, position_only=False):
+        """return generalized equipartition theorem matrix."""
+        if self.has_velocity and not position_only:
+            X = np.append(state[...,0], self.mass * state[...,1], axis=1)
+            d_H = np.append( -self.get_external_force(state,t), state[...,1], axis=1)
+
+            return np.einsum('in,im->inm', X, d_H)
+        else:
+            if self.has_velocity:
+                state = state[...,0]
+            return np.multiply(state, -self.get_external_force(state,t))
+
     def show_potential(
         self,
         t,

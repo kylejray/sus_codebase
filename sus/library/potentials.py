@@ -1,5 +1,4 @@
 import numpy as np
-
 from ..protocol_designer import Potential
 
 
@@ -35,11 +34,20 @@ def one_D_V_force(x, params):
 # define the potential 2 parameters, 1 dimension, no default values
 odv = Potential(one_D_V, one_D_V_force, 2, 1)
 
-'''
-def n_dim_spring(coords, params):
-    return .5* params[0] * np.square(coords-params[1])
 
-''' 
+def spring(x, params, dx=False):
+    k, x0 = params
+    if dx:
+        return k * (x-x0)
+    return .5 * k * np.square(x-x0)
+
+def spring_force(x, params):
+    return -spring(x, params, dx=True)
+
+spring_default = [1, 0] 
+spring_dom = [[-5], [5]]
+spring_1D = Potential(spring, spring_force, 2, 1, default_params = spring_default, relevant_domain = spring_dom)
+ 
 
 def e_well_3D(x, y, z, params):
     """
@@ -199,20 +207,20 @@ def blw_potential(x, y, params, scaled_params=True):
     a, b, c, d, L0, L1, R0, R1, x1, x2, y1, y2 = params
 
     barriers = (
-        a * (x + L) * (y + L) * (L - y)
+        a * (L + x) * (L + y) * (L - y)
         + L * (B - a) * x
-        + b * (L - x) * (y + L) * (L - y)
+        + b * (L - x) * (L + y) * (L - y)
         - L * (B - b) * x
-        + c * (x + L) * (L - x) * (y + L)
+        + c * (L + x) * (L - x) * (L + y)
         + L * (B - c) * y
-        + d * (x + L) * (L - x) * (L - y)
+        + d * (L + x) * (L - x) * (L - y)
         - L * (B - d) * y
     )
     lifts = (
         L0 * (L - x) * (L - y)
-        + L1 * (L - x) * (y + L)
-        + R0 * (x + L) * (L - y)
-        + R1 * (x + L) * (y + L)
+        + L1 * (L - x) * (L + y)
+        + R0 * (L + x) * (L - y)
+        + R1 * (L + x) * (L + y)
     )
     wells = (x - x1) ** 2 * (x - x2) ** 2 + (y - y1) ** 2 * (y - y2) ** 2
     return barriers + lifts + WD * wells
@@ -684,5 +692,5 @@ def fredkin_cheat_force(x, y, z, params):
 
 
 fp_def_param = [2, -16, 0, 0]
-fp_domain = [[-1.5, -1.5, -1.5], [1.5, 1.5, 1.5]]
+fp_domain = [[-2, -2, -2], [2, 2, 2]]
 fredkin_cheat_pot = Potential(fredkin_cheat_pot, fredkin_cheat_force, 4, 3, default_params=fp_def_param, relevant_domain=fp_domain)

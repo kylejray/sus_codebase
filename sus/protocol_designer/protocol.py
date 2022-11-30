@@ -145,7 +145,7 @@ class Protocol:
 
         return copy.deepcopy(self)
 
-    def show_params(self, which=None, resolution=50):
+    def show_params(self, which=None, resolution=50, param_labels=None):
         """
         Shows plots of the chosen parameters over times, no returns
 
@@ -189,29 +189,25 @@ class Protocol:
         )
         fig.subplots_adjust(hspace=0.5)
 
+        if param_labels is None:
+            param_labels = ["p{}".format(i + 1) for i in indices]
         for i, item in enumerate(ax):
             y_range = max(np.abs(np.max(p_array[:, i])), np.abs(np.min(p_array[:, i])))
             if y_range == 0:
                 y_range = 1
             item.set_xlim(self.t_i, 1.1*self.t_f)
-            item.set_ylim(-1.5 * y_range, 1.5 * y_range)
+            item.set_ylim(-1.2 * y_range, 1.2 * y_range)
             item.yaxis.tick_right()
             item.axhline(y=0, color="k", linestyle="--", alpha=0.5)
             # x_lines=np.flatten(self.times)
-
-            item.text(
-                0,
-                0,
-                "p{}".format(indices[i] + 1),
-                horizontalalignment="right",
-                verticalalignment="center",
-            )
-            if i > 0:
+            item.set_ylabel(param_labels[i])
+            if i < len(indices)-1:
                 item.set_xticks([])
 
             item.plot(t, p_array[:, i])
 
         plt.show()
+        return fig, ax
 
     def get_linear(self, init, final, t):
         """
