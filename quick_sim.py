@@ -62,44 +62,4 @@ def setup_sim(system, init_state, procedures=None, sim_params=None, dt=1/200, da
     sim.system = system
 
     return sim
-
-'''
-def run_sim(sim, procedures):
-    sim.output = sim.run()
-
-
-t_finals=[]
-mean=[]
-std=[]
-acc=[]
-fail=[]
     
-print(system.protocol.t_f, end ="\r")
-has_velocity = True
-
-
-
-
-final_W = sim.output.final_W
-final_state=sim.output.final_state
-    
-a,f = szilard_accuracy(initial_state, final_state)
-m=final_W.mean()
-s=final_W.std()
-    
-t_finals.append(system.protocol.t_f)
-mean.append(m)
-std.append(s)
-acc.append(a)
-fail.append(f)
-    
-system.protocol.time_stretch(2)
-
-
-mean=np.asarray(mean)
-std=np.asarray(std)
-t_finals=np.asarray(t_finals)
-acc=np.asarray(acc)
-fail=np.asarray(fail)
-print("done")
-'''
