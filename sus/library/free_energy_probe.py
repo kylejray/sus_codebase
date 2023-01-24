@@ -260,6 +260,10 @@ def pwl_double_well(params):
     return UnivariateSpline(x_points(params), y_points(params), k=1, s=0)
 
 def pwl_dw_potential(x, params):
+    '''
+    piecewise linear double well
+    params: x_0, x_1, d_0, d_1, w_0, w_1, tilt
+    '''
     U = pwl_double_well(params)
     return U(x)
 

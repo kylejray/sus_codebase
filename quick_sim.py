@@ -6,10 +6,6 @@ from math import sqrt
 sim_path = os.path.dirname(os.path.realpath(__file__))+"/simtools/infoenginessims/"
 sys.path.append(sim_path)
 
-'''
-WIP for addiing directories, recursively 
-sys.path.append([sim_path+f'{name}/' for name in os.listdir(sim_path) if os.path.isdir(sim_path+name)])
-'''
 
 from integrators import rkdeterm_eulerstoch
 from dynamics import langevin_underdamped, langevin_overdamped
@@ -19,6 +15,36 @@ from simulation import Simulation
 
 
 def setup_sim(system, init_state, procedures=None, sim_params=None, dt=1/200, damping=1, temp=1, extra_time=1):
+    '''
+    returns a quick and dirty langevin Simulation object, overdamped if system.has_velocity is false, underdamped otherwise
+
+    Parameters
+    ----------
+    system: instantiation of the System class
+        this is where the simulation will pull the force and potential from
+    init_state: ndarray of shape [N_trials, shape(state)]
+        array representing the initial state of the trials
+    procedures: list of SimProcs
+        these are the procedures that will be done during the sim
+    sim_params: list of length 3 for underdamped and 2 for overdamped
+        gives the dimensionless simulation parameters, defaults to 1 for all parameter
+    dt: float
+        the sim dt value for the integrator
+    damping: float
+        meta parameter that changes just the amount of damping, in standard language it is often called gamma
+    temp : float
+        meta parameter that changes just the temperature
+    extra time: float >= 1
+        when neq 1, the sim runs beyond protocol end time. if set to 1.3, for example, it will run another 30% longer than the protocol duration
+    Returns
+    -------
+    sim: instantiation of Simuation class
+        bundles all the inputs into a usable simulation object
+
+        
+
+
+    '''
 
 
     if system.has_velocity:
@@ -62,4 +88,3 @@ def setup_sim(system, init_state, procedures=None, sim_params=None, dt=1/200, da
     sim.system = system
 
     return sim
-    
