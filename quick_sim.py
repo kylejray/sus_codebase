@@ -80,7 +80,7 @@ def setup_sim(system, init_state, procedures=None, sim_params=None, dt=1/200, da
 
     total_time = extra_time * (system.protocol.t_f-system.protocol.t_i)
 
-    nsteps = int(total_time / dt)
+    nsteps = round(total_time / dt)
 
     sim = Simulation(integrator.update_state, procedures, nsteps, dt,
                                 initial_state=init_state)
