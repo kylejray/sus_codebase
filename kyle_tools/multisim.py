@@ -30,11 +30,12 @@ class SimManager:
         '''
         pass
 
-    def run_sim(self, verbose=True, **sim_kwargs):
+    def run_sim(self, **sim_kwargs):
         '''
         Sets up a dictionary to save data in, and then initializes a simulation, runs it, and analyzes the output.
 
         '''
+        verbose = sim_kwargs['verbose']
         self.save_dict={}
         self.save_dict['start_date'] = datetime.datetime.now()
         if verbose:
@@ -265,7 +266,7 @@ class ParamGuider():
                 
 class FillSpace(ParamGuider):
     '''
-    Attempts to guide the parameters to spread out in "FOM" space by defining a get_prob function that acts like a repulsive 1/r potetial between all previously accepted values. Work still in progress, underperforming currently...
+    Attempts to guide the parameters to spread out in "FOM" space by defining a get_prob function that acts like a repulsive 1/r potetial between all previously accepted values. Very much Work still in progress, underperforming currently...
     '''
     def get_prob(self, new_val, old_val):
         ener = 0
