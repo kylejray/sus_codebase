@@ -266,7 +266,7 @@ class ParamGuider():
                 
 class FillSpace(ParamGuider):
     '''
-    Attempts to guide the parameters to spread out in "FOM" space by defining a get_prob function that acts like a repulsive 1/r potetial between all previously accepted values. Very much Work still in progress, underperforming currently...
+    Attempts to guide the parameters to spread out in "FOM" space by defining a get_prob function that acts like a repulsive 1/r potetial between all previously accepted values. Very much Work still in progress, underperforming currently and not really working sometimes...
     '''
     def get_prob(self, new_val, old_val):
         ener = 0
