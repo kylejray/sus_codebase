@@ -103,6 +103,8 @@ def numpify_val(value):
 
     return value
 
+def temp_print(string):
+    return print("\r"+string, end="")
 
 
 '''
@@ -179,12 +181,12 @@ def inv_xtanhx(arg, tol=.001, max_iterations=10):
 from sklearn.neighbors import KernelDensity
 
 
-def kde(train_data, bandwidth=1, kernel='gaussian'):
+def kde(train_data, **kwargs):
     n_dim = len(train_data[-1])
     
     #train_data = np.c_(*train_data)
     
-    kde = KernelDensity(bandwidth=bandwidth, kernel=kernel)
+    kde = KernelDensity(**kwargs)
 
         
     kde.fit(train_data)

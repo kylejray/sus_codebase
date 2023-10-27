@@ -1,4 +1,5 @@
 import numpy as np
+import copy
 
 from .protocol import Protocol
 
@@ -36,9 +37,11 @@ class Potential:
         external_force,
         N_params,
         N_dim,
+        *args,
         default_params=None,
         relevant_domain=None,
-        conservative=True
+        conservative=True,
+        **kwargs,
     ):
         """
         potential: func
@@ -58,7 +61,8 @@ class Potential:
             if ndarray, take the array to be [ [x1_min, x2_min,....], [x1_max, x2_max,...]]
         """
 
-        self.scale = 1
+        self.scale = 1.
+        self.offset = 0.
         self.conservative = conservative
         self.pot = potential
         self.force = external_force
@@ -71,6 +75,16 @@ class Potential:
             )
         else:
             self.domain = np.asarray(relevant_domain)
+    
+    def copy(self):
+        """
+        Returns
+        -------
+        A copy of your current potential
+        """
+
+        return copy.deepcopy(self)
+
 
     def potential(self, *args, **kwargs):
         """
@@ -83,7 +97,7 @@ class Potential:
         a scaled version of the potential function
 
         """
-        return np.multiply(self.scale, self.pot(*args, **kwargs))
+        return np.multiply(self.scale, self.pot(*args, **kwargs))+self.offset
 
     def external_force(self, *args, **kwargs):
         """
