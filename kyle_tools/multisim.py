@@ -35,7 +35,10 @@ class SimManager:
         Sets up a dictionary to save data in, and then initializes a simulation, runs it, and analyzes the output.
 
         '''
-        verbose = sim_kwargs['verbose']
+        try:
+            verbose = sim_kwargs['verbose']
+        except:
+            verbose = False
         self.save_dict={}
         self.save_dict['start_date'] = datetime.datetime.now()
         if verbose:
@@ -87,7 +90,7 @@ class SimManager:
             while bool and i < 1_000:
                 i += 1
                 current_val = self.params[key]
-                new_val = np.random.normal(current_val, np.abs(std*current_val))
+                new_val = np.random.normal(current_val, std)
                 if verbose:
                     print(f'trial_value: {new_val}')
                 if self.verify_param(key, new_val):
@@ -174,7 +177,7 @@ class ParamGuider():
         '''
         This is the probability that a particular jump is accepted based on the current and the new FOM. Here the default is all jumps accepted
         '''
-        return 1
+        return 1.0
 
     def truncate_val(self, new_val):
         '''
@@ -212,7 +215,7 @@ class ParamGuider():
         new_val = self.get_current_val()
         accept_prob = self.get_prob(new_val, curr_val)
 
-        if self.truncate_val(new_val) and np.random.uniform() < accept_prob :
+        if self.truncate_val(new_val) and np.random.uniform() <= accept_prob :
             self.current_params =  sm.params.copy()
             self.val_list.append(new_val)
             if self.verbose:
@@ -273,12 +276,13 @@ class FillSpace(ParamGuider):
         ener_old = 0
         try:
             past_vals = self.val_list
+            if len(past_vals) == 0:
+                past_vals.append(old_val)
         except:
             self.val_list = [old_val]
             past_vals = self.val_list
-        for val in past_vals :
-            ener += np.sum(np.subtract(new_val, val)**2)
-            ener_old += np.sum(np.subtract(old_val, val)**2)
+        ener = np.sum(np.subtract(new_val, past_vals)**2)
+        ener_old = np.sum(np.subtract(old_val, past_vals)**2)
         beta = 1
         if hasattr(self,'beta'):
             beta = self.beta
