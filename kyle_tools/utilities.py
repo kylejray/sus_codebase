@@ -35,28 +35,30 @@ def open_json(file_path):
         return numpify(json.load(f))
 
 
-
-def save_as_json(input_dict, name=None, dir=None):
+def save_as_json(input_dict, name=None, save_dir=None, return_dir = False):
     now = datetime.datetime.now()
 
     if 'save_date' not in input_dict.keys():
-        
         input_dict['save_date'] = now
-    if dir is None:
-        dir = f"./{now.year-2000}_{now.month:02d}_{now.day:02d}/"
-    if not os.path.exists(dir):
-        os.makedirs(dir)
+    if save_dir is None:
+        save_dir = f"./{now.year-2000}_{now.month:02d}_{now.day:02d}/"
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir)
+    
 
     save_dict = jsonify(input_dict)
 
     if name is None:
         try: name = input_dict['save_name']
         except: name = f"./{now.hour:02d}{now.minute:02d}_{now.second:02d}p{now.microsecond:06d}"
-    dir += name + '.json'
-    with open(dir, 'w') as fout:
+    full_dir = save_dir + name + '.json'
+    with open(full_dir, 'w') as fout:
         json.dump(save_dict, fout)
     print('\n saved as json')
-    return
+    if return_dir:
+        return save_dir
+    else:
+        return
 
 def time_func(func, args, return_time=True):
     initial = datetime.datetime.now()
