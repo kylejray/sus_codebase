@@ -1,7 +1,5 @@
 import numpy as np
-from numba import njit
 
-@njit
 def binary_partition(positions, boundary=0):
     '''
     takes a set of position coordinates and sets each value to either 0 or 1 depending on if it is below or above the boundary

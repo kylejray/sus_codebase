@@ -157,6 +157,24 @@ def get_size(obj, seen=None):
 
     return size/ 1024**2
 
+def format_size(num, suffix='B'):
+    ''' by Fred Cirera,  https://stackoverflow.com/a/1094933/1870254, modified'''
+    for unit in ['','Ki','Mi','Gi','Ti','Pi','Ei','Zi']:
+        if abs(num) < 1024.0:
+            return "%3.1f %s%s" % (num, unit, suffix)
+        num /= 1024.0
+    return "%.1f %s%s" % (num, 'Yi', suffix)
+
+'''
+WIP
+def sizeof_vars(threshhold = 1E6):
+    var_list = eval("sorted(((name, sys.getsizeof(value)) for name, value in list(locals().items())), key= lambda x: -x[1])[:10]")
+    for name, size in var_list:
+        if size > threshhold:
+            print("{:>30}: {:>8}".format(name, format_size(size)))
+    return var_list
+'''
+
 def inv_xtanhx(arg, tol=.001, max_iterations=10):
     if arg is np.nan:
         return np.nan
@@ -186,91 +204,3 @@ def inv_xtanhx(arg, tol=.001, max_iterations=10):
             i+=1
     return output[0]  
 
-from sklearn.neighbors import KernelDensity
-
-
-def kde(train_data, **kwargs):
-    n_dim = len(train_data[-1])
-    
-    #train_data = np.c_(*train_data)
-    
-    kde = KernelDensity(**kwargs)
-
-        
-    kde.fit(train_data)
-    kde.n = n_dim
-
-    return kde
-'''
-def kde_plot(kde, range):
-    original_shape = np.shape(data)
-    assert len(original_shape) == 2
-
-    X, Y = np.meshgrid(*data)
-
-    plot_data = np.c_[Y.ravel(),X.ravel()]
-    
-    logprob = kde.score_samples(plot_data)
-    rs_log = np.reshape(logprob, (mesh, mesh))
-    
-    fig = plt.figure(figsize=(10, 10))
-    ax = fig.add_subplot(111, projection='3d')
-
-    ax.plot_wireframe(X, Y, np.exp(rs_log), alpha=.5)
-    return(fig, ax)
-
-    x_d = np.linspace(*xlims, mesh)
-    y_d = np.linspace(*ylims, mesh)
-
-    X, Y = np.meshgrid(x_d, y_d)
-'''
-
-'''
-def equilibrated_state(eq_system, T=1, N=5000, initial_state=None, eq_period=1, what_time=0, max_iterations=4):
-
-    delta_E = 1
-    i = 0
-    nsteps = 1000
-    gamma = 1
-    theta = 1
-    eta = 1 * np.sqrt(T)
-    dynamic = langevin_underdamped.LangevinUnderdamped(theta, gamma, eta,
-                                                       eq_system.get_external_force)
-
-    integrator = rkdeterm_eulerstoch.RKDetermEulerStoch(dynamic)
-
-    procedures = [sp.ReturnFinalState()]
-
-    trivial_protocol = eq_system.potential.trivial_protocol()
-    trivial_protocol.time_stretch(eq_period)
-
-    for i, item in enumerate(eq_system.protocol.get_params(what_time)):
-        trivial_protocol.change_params(which_params=i+1, new_params=item)
-
-    system = eq_system.copy()
-    system.protocol = trivial_protocol
-    total_time = system.protocol.t_f - system.protocol.t_i
-
-    if initial_state is None:
-        initial_state = system.eq_state(N, resolution=100, damping=None)
-        sys.stdout.write("\033[K")
-
-    while delta_E >= .001 and i <= max_iterations:
-        dt = total_time / nsteps
-        sim = simulation.Simulation(integrator.update_state, procedures, nsteps, dt, initial_state)
-
-        sim.system = system
-        sim.output = sim.run(verbose=True)
-        sys.stdout.write("\033[K")
-        sys.stdout.write("\033[K")
-        equilibrated_state = sim.output.final_state
-        last_delta_E = delta_E
-        delta_E = (sum(system.get_energy(equilibrated_state, 0)) - sum(system.get_energy(initial_state, 0)))/sum(system.get_energy(initial_state, 0))
-        delta_E = abs(delta_E)
-        if (last_delta_E - delta_E)/last_delta_E < .15:
-            nsteps += 500
-        initial_state = equilibrated_state
-        print(i, delta_E)
-        i += 1
-    return(equilibrated_state)
-    '''
