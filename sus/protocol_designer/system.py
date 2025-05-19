@@ -257,7 +257,7 @@ class System:
     def show_potential(
         self,
         t,
-        ax=None,
+        figax=None,
         resolution=100,
         surface=False,
         manual_domain=None,
@@ -302,8 +302,10 @@ class System:
         -------
         returns fig, ax
         """
-        if ax is None:
+        if figax is None:
             fig, ax = plt.subplots()
+        else:
+            fig, ax = figax
 
         if self.potential.N_dim >= 2 and axis2 is not None:
             U, X_mesh = self.lattice(t, resolution, axes=(axis1, axis2), slice_values=slice_values, manual_domain=manual_domain)
@@ -314,7 +316,7 @@ class System:
             if surface is False:
                 out = ax.contourf(X, Y, U, contours, **plot_kwargs)
                 if cbar:
-                    plt.colorbar(out)
+                    fig.colorbar(out)
                 ax.set_title("t={:.2f}".format(t))
 
 
