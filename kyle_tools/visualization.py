@@ -148,7 +148,7 @@ def animate_sim(all_state, times=[0,1], system=None, frame_skip=30, which_axes=N
     x_array = [all_state[item] for item in which_axes]
 
     if fig_ax is None:
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(figsize=(10,10))
 
     else:
         fig, ax = fig_ax
@@ -156,8 +156,8 @@ def animate_sim(all_state, times=[0,1], system=None, frame_skip=30, which_axes=N
     samples = np.linspace(0, nsteps-1, nsteps)[::frame_skip]
     time = np.linspace(times[0], times[1], nsteps + 1)
     opacity=alpha
-    if opacity is None:
-        opacity = min(1, 300/N)
+    if alpha is None:
+        alpha = min(1, 300/N)
 
     x = x_array[0]
     y = x_array[1]
@@ -171,9 +171,9 @@ def animate_sim(all_state, times=[0,1], system=None, frame_skip=30, which_axes=N
     x_lim = (np.min(x), np.max(x))
     y_lim = (np.min(y), np.max(y))
     
-    txt = fig.suptitle('t={:.2f}'.format(times[0]))
+    #txt = fig.suptitle('t={:.2f}'.format(times[0]))
 
-    scat_kwargs = {'alpha':opacity, 'zorder':10}
+    scat_kwargs = {'alpha':alpha, 'zorder':10}
 
     if color_by_state is None:
         scat = ax.scatter(x[:, 0], y[:, 0], **scat_kwargs)
@@ -199,17 +199,17 @@ def animate_sim(all_state, times=[0,1], system=None, frame_skip=30, which_axes=N
 
         if system is not None:
             new_pot = system.show_potential(t_c, cbar=False, ax=ax, surface=False, **pot_kwargs)
-            #pot.collections = new_pot[0].collections
+            pot.collections = new_pot[0].collections
 
         if color_by_state is None:
             scat.set_offsets(np.c_[x_i, y_i])
         else:
             for i, item in enumerate(state_lookup):
                 scat[i].set_offsets(np.c_[x_i[state_lookup[item]], y_i[state_lookup[item]]])
-        txt.set_text('t={:.2f}'.format(t_c))
+        #txt.set_text('t={:.2f}'.format(t_c))
 
 
-    ani = animation.FuncAnimation(fig, animate, interval=100, frames=len(samples), blit=False)
+    ani = animation.FuncAnimation(fig, animate, interval=5, frames=len(samples), blit=False)
 
     return ani, fig, ax
 
@@ -385,6 +385,159 @@ def animate_hist_1D(all_state, total_time, which_axes=None, frame_skip=20, nbins
     ani = animation.FuncAnimation(fig, animate, interval=100, frames=len(time), blit=False)
     return ani, fig, ax
 
+def animate_hist_potential(all_hists, lims=None, **kwargs):
+
+    if lims is None:
+        lims = [np.min(np.array(coords)), np.max(np.array(coords))]
+
+    fig, ax = plt.subplots(figsize=(10, 10))
+
+    ylim = 0
+
+    for hists in all_hists:
+        for hist in hists['hist']:
+            local_max = np.max(hist[0])
+            if local_max > ylim:
+                print(ylim, local_max)
+                ylim = local_max
+            
+
+
+    for histogram in all_hists:
+        hist = histogram['hist']
+        c = histogram['color']
+        axi = histogram['ax']
+        nframes= len(hist)
+        print(nframes)
+        counts, bins = [np.squeeze(np.array(item)) for item in hist[0]]
+        h1 = ax.hist(bins[:-1], bins, weights=counts, color=c, **kwargs)
+        ax.set_xlim(lims)
+        ax.set_ylim([0, 1.1 * ylim])
+        
+    
+
+    def animate(i):
+        plt.cla()
+        for histogram in all_hists:
+            hist = histogram['hist']
+            c = histogram['color']
+            axi = histogram['ax']
+            counts, bins = [np.squeeze(np.array(item)) for item in hist[i]]
+            hj = ax.hist(bins[:-1], bins, weights=counts, color=c, **kwargs)
+            ax.set_xlim(lims)
+            ax.set_ylim([0, 1.1 * ylim])
+
+    ani = animation.FuncAnimation(fig, animate, interval=100, frames=nframes, blit=False)
+    
+    return ani, fig, ax
+
+def animate_1D_pos_and_potential(all_state, system, times=[0,1], frame_skip=30, which_axes=None, axes_names=None, color_by_state=None, key_state=None, color_key=None, legend=True, alpha=None, fig_ax=None, fps=30, domain_override=None, dot_kwargs={}, **pot_kwargs):
+    # all_state is the positions and the potential energies stacked on tp of eachother.
+
+    
+    N_dim=2
+    N, nsteps, _ = all_state.squeeze().shape
+
+  
+
+    if color_by_state is not None:
+        if key_state is not None:
+            state_lookup = separate_by_state(key_state)
+        else:
+            state_lookup = separate_by_state(all_state[:, 0, ...])
+
+    
+
+    if which_axes is None:
+        assert np.size(np.shape(all_state)) in (3, 4), 'not a recognized all_state format, use which_axes kwarg or all_state of dimension [N, Nsteps, D, 2]/[N, Nsteps, D]'
+        for i in range(N_dim):
+            if np.size(np.shape(all_state)) == 4:
+                which_axes = [np.s_[..., i, 0] for i in range(N_dim)]
+            if np.size(np.shape(all_state)) == 3:
+                which_axes = [np.s_[..., i] for i in range(N_dim)]
+
+    assert len(which_axes) == 2, 'can only plot 2 coordinates at once'
+
+    x_array = [all_state[item] for item in which_axes]
+
+    if fig_ax is None:
+        fig, ax = plt.subplots(figsize=(10,10))
+
+    else:
+        fig, ax = fig_ax
+        
+    samples = np.linspace(0, nsteps-1, nsteps)[::frame_skip]
+    time = np.linspace(times[0], times[1], nsteps + 1)
+
+    opacity=alpha
+    if opacity is None:
+        opacity = min(1, 300/N)
+
+    x = x_array[0]
+    y = x_array[1]
+
+    names = axes_names
+
+    if axes_names is None:
+        names = ('x', 'y')
+
+
+    x_lim = (np.min(x), np.max(x))
+    if domain_override is not None:
+        x_lim = domain_override
+    y_lim = (np.min(y), np.max(y))
+    
+    txt = fig.suptitle('t={:.2f}'.format(times[0]))
+
+    scat_kwargs = {'alpha':opacity, 'zorder':10}
+    scat_kwargs.update(dot_kwargs)
+
+    if color_by_state is None:
+        scat = ax.scatter(x[:, 0], y[:, 0], **scat_kwargs)
+    else:
+        if color_key is not None:
+            color_lookup = dict(zip(state_lookup, color_key))
+            scat = [ax.scatter(x[state_lookup[key], 0], y[state_lookup[key], 0], c=color_lookup[key], **scat_kwargs) for key in state_lookup]
+        else:
+            scat = [ax.scatter(x[state_lookup[key], 0], y[state_lookup[key], 0], **scat_kwargs) for key in state_lookup]
+        if legend:
+            fig.legend(state_lookup)
+    
+    if system is not None:
+        pot_x = np.linspace(x_lim[0],x_lim[1], 500)[:,None,None,None]
+
+        mean_scat = ax.scatter([],[], c='r', s=128, marker='D', zorder=100)
+
+        pot_val = system.get_potential(pot_x, 0,)
+        line = ax.plot([], [], c='k', **pot_kwargs)[0]
+        line.animated=True
+
+    ax.set(xlim=x_lim, ylim=y_lim, xlabel=names[0], ylabel=names[1])
+
+    def animate(i):
+        index = int(samples[i])
+        t_c = time[index]
+        x_i = x[:, index]
+        x_mean = np.mean(x_i)
+        y_i = y[:, index]
+
+        if color_by_state is None:
+            scat.set_offsets(np.c_[x_i, y_i])
+            mean_scat.set_offsets(np.c_[x_mean, 0])
+        else:
+            for i, item in enumerate(state_lookup):
+                scat[i].set_offsets(np.c_[x_i[state_lookup[item]], y_i[state_lookup[item]]])
+        txt.set_text('t={:.2f}'.format(t_c))
+        if system is not None:
+
+            pot_val = system.get_potential(pot_x, t_c)
+            line.set_data(pot_x.squeeze(), pot_val.squeeze())
+
+
+    ani = animation.FuncAnimation(fig, animate, interval=int(1000/fps), frames=len(samples), blit=False)
+
+    return ani, fig, ax
+    
 
     '''
     function to do crooks analysis for a list of works that come frmo a time symmeteic protocol. does some plots, returns some info

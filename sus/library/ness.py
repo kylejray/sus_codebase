@@ -12,7 +12,7 @@ def three_well_periodic_potential(x, params):
 def three_well_periodic_force(x, params):
     depth, tilt, asym, *_ = params
     d_U1 = 2*np.pi*depth*np.sin(2*np.pi*x) - tilt
-    d_U2 = asym * (np.pi/3) * np.sin(2*np.pi*x/3)
+    d_U2 = 2*asym * (np.pi/3) * np.sin(2*np.pi*x/3)
 
     F = -d_U1 - d_U2 
     return F

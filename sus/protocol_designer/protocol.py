@@ -145,7 +145,7 @@ class Protocol:
 
         return copy.deepcopy(self)
 
-    def show_params(self, which=None, resolution=50, param_labels=None):
+    def show_params(self, which=None, resolution=50, param_labels=None, show=True):
         """
         Shows plots of the chosen parameters over times, no returns
 
@@ -154,15 +154,15 @@ class Protocol:
         which: None, all,  or list
             if None, shows only nontrivial parameters that change over time
             if all, shows all parameters no amtter what
-            if list, shows only the parameters in the list. i.e. which=3 will only show parameter numbe 3
+            if list, shows only the parameters in the list. i.e. which=3 will only show parameter number 3
         """
         N_t = resolution
         t = np.linspace(self.t_i, 1.1*self.t_f, N_t)
 
-        if which is "all" or which is None:
+        if which == "all" or which == None:
             indices = np.asarray(range(self.N_params))
 
-        if which is not None and which is not "all":
+        if which != None and which != "all":
             indices = np.asarray(which) - 1
 
         p_array = np.zeros((N_t, len(indices)))
@@ -191,6 +191,7 @@ class Protocol:
 
         if param_labels is None:
             param_labels = ["p{}".format(i + 1) for i in indices]
+            
         for i, item in enumerate(ax):
             y_range = max(np.abs(np.max(p_array[:, i])), np.abs(np.min(p_array[:, i])))
             if y_range == 0:
@@ -205,8 +206,8 @@ class Protocol:
                 item.set_xticks([])
 
             item.plot(t, p_array[:, i])
-
-        plt.show()
+        if show:
+            plt.show()
         return fig, ax
 
     def get_linear(self, init, final, t):

@@ -32,6 +32,7 @@ class InterpolatedPotential_1D(Potential):
             if ndarray, take the array to be [ [x1_min, x2_min,....], [x1_max, x2_max,...]]
         """
         self.key_points = key_points_func
+        self.offset = 0.
         self.scale = 1
         self.conservative = conservative
         self.N_params = N_params
@@ -109,10 +110,10 @@ def triple_well_keys(params):
         knot_list = x_list[::2]
         u_list = [0 , -d, -d, -d, 0]
         d/dx
-        if bias is 'left':
+        if bias == 'left':
             x_list.insert(0, x-w/2-(1-dx))
             u_list.insert(0, k)
-        if bias is 'right':
+        if bias == 'right':
             x_list.append( x+w/2+(1-dx))
             u_list.append(k)
         return [x_list, u_list, knot_list]

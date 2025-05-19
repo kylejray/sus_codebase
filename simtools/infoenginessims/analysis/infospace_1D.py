@@ -48,7 +48,7 @@ def plot_extrema(infospace, ext_index, *args,
 
     if to_label_axes:
         ax.set_xlabel('t')
-        ylabel = 'x' if ext_index is 0 else 'V'
+        ylabel = 'x' if ext_index == 0 else 'V'
         ax.set_ylabel(ylabel)
 
     if xticks:

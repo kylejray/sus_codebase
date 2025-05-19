@@ -17,10 +17,10 @@ def test_jsonify(return_dicts=False):
     dj = jsonify(d)
     
     if not return_dicts:
-        assert type(d1['nparray']) == list, 'failed to convert ndarray'
-        assert type(d1['nparray_list'][0]) == list, 'failed to convert ndarray in list'
-        assert type(d1['mix_list'][0]) == dict, 'failed to take dict -> dict in mixed list'
-        assert type(d1['mix_list'][0]['np_array']) == list, 'failed to convert ndarray in nested dict'
+        assert type(d['nparray']) == list, 'failed to convert ndarray'
+        assert type(d['nparray_list'][0]) == list, 'failed to convert ndarray in list'
+        assert type(d['mix_list'][0]) == dict, 'failed to take dict -> dict in mixed list'
+        assert type(d['mix_list'][0]['np_array']) == list, 'failed to convert ndarray in nested dict'
 
     if return_dicts:
         return dj, d
@@ -32,13 +32,13 @@ def test_numpify():
 
 class SimManagerTest(SimManager):
     def __init__(self):
-        self.params = {k:v for k,v in zip(['position','sigma'], [1,.2])}
+        self.params = {k:v for k,v in zip(['position','sigma'], [[1,1],.01])}
         self.save_name = [None,'./test_output/']
         self.save_procs = [SaveSimOutput()]
 
     def initialize_sim(self):
         mu = self.params['position']
-        sigma = self.params['sigma_scale']
+        sigma = self.params['sigma']
         self.sim = GaussianGenerator(mu, sigma)
         return 
 
@@ -48,7 +48,7 @@ class SimManagerTest(SimManager):
     def verify_param(self, key, val):
         if key == 'position':
             return True
-        if key == 'sigma_scale':
+        if key == 'sigma':
             return 0 < val
 
 
@@ -60,17 +60,18 @@ class GaussianGenerator():
     def __init__(self, mu, sigma):
         self.mu = mu
         self.sigma= sigma
-    def run(self):
-        return np.random.normal(self.mu, self.sigma, np.shape(self.mu))
+    def run(self, **kwargs):
+        out = np.random.normal(self.mu, self.sigma, np.shape(self.mu))
+        try:
+            return list(out)
+        except:
+            return out
 
 space_filler = FillSpace(SimManagerTest(), param_keys=['position'])
+random_filler = ParamGuider(SimManagerTest(), param_keys=['position'])
 
 def trunc_func(val):
-    try:
-        return all([abs(v-1) < 1 for v in val])
-    except TypeError:
-        val = [val]
-        return all([abs(v-1) < 1 for v in val])
+    return np.sum(np.square(val-1)) < 1
 
 def val_func(simrun):
     return simrun.sim.output
@@ -78,3 +79,6 @@ def val_func(simrun):
 
 setattr(space_filler, 'truncate_val', trunc_func)
 setattr(space_filler, 'get_val', val_func)
+
+setattr(random_filler, 'truncate_val', trunc_func)
+setattr(random_filler, 'get_val', val_func)

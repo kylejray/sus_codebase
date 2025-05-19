@@ -233,11 +233,13 @@ class TerminateOnMean(MeasureMeanValue):
 class MeasureAllStateDists(SimProcedure):
     """Records a running set of state histograms."""
 
-    def __init__(self, bins, step_request=s_[:],
+    def __init__(self, bins, step_request=s_[:], trial_request=s_[:], coord_request=s_[:,0,:],
                  output_name='all_state_dists'):
 
         self.bins = bins
         self.step_request = step_request
+        self.trial_request = trial_request
+        self.coord_request = coord_request
         self.output_name = output_name
 
     def do_initial_task(self, simulation):
@@ -250,11 +252,11 @@ class MeasureAllStateDists(SimProcedure):
         step_indices = range(self.simulation.nsteps + 1)[self.step_request]
         hists = []
 
-        self.all_dists = {'step_indices': step_indices, 'hists': hists}
+        self.all_dists = {'step_indices': step_indices,'trial_request':self.trial_request, 'coord_request':self.coord_request, 'hists': hists}
 
         if 0 in step_indices:
 
-            initial_state = simulation.initial_state
+            initial_state = simulation.initial_state[self.trial_request][self.coord_request]
             bins = self.bins
 
             dist = histogramdd(initial_state, bins=bins)
@@ -266,7 +268,7 @@ class MeasureAllStateDists(SimProcedure):
 
         if next_step in self.all_dists['step_indices']:
 
-            next_state = self.simulation.next_state
+            next_state = self.simulation.next_state[self.trial_request][self.coord_request]
             bins = self.bins
             hists = self.all_dists['hists']
 

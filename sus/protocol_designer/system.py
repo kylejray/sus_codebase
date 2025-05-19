@@ -266,6 +266,7 @@ class System:
         axis2=2,
         slice_values=None,
         cbar=True,
+        show=True,
         **plot_kwargs
     ):
         """
@@ -316,15 +317,13 @@ class System:
                     plt.colorbar(out)
                 ax.set_title("t={:.2f}".format(t))
 
-                plt.show()
 
             if surface is True:
                 fig = plt.figure()
                 ax = fig.add_subplot(111, projection="3d")
                 out = ax.plot_wireframe(X, Y, U, **plot_kwargs)
                 ax.set_title("t={:.2f}".format(t))
-
-                plt.show()
+                
 
         if self.potential.N_dim == 1 or axis2 is None:
             U, X_mesh = self.lattice(t, resolution, axes=[axis1], slice_values=slice_values, manual_domain=manual_domain)
@@ -335,7 +334,10 @@ class System:
             out = ax.plot(X, Y, **plot_kwargs)
             ax.set_title("t={:.2f}".format(t))
 
-        return ax, out
+        if show:
+            plt.show()
+
+        return fig, ax, out
 
     def show_force(
         self,

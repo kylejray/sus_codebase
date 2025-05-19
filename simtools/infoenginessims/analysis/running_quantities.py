@@ -66,7 +66,7 @@ def plot_running_quantity(quantity, sim=None,
 
             yval = 0.9 * (ylim[1] - ylim[0]) + ylim[0]
 
-            if substage_labels is 'numbered':
+            if substage_labels == 'numbered':
 
                 substage_labels = range(len(substage_times) - 1)
 
