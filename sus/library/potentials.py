@@ -481,6 +481,41 @@ asym_1DW_defaults = (1, 1, -16, -16)
 
 asym_1DW = Potential(asym_1D_well, asym_1D_well_force, 4, 1, default_params=asym_1DW_defaults)
 
+def quadratic_2D_well(x, y, params):
+    """
+    2D single well potential using just eve:
+        k_x*(x-x_0)^2 / 2 * k_y*(y-y_0)^2 / 2
+
+    Parameters
+    ----------
+    x: ndarray of dimension [N,]
+        the x coordinates for N positions
+    params: list/tuple (1, 2)
+        1, 2 : coefficients of the x^4 and x^2 terms, respectively
+
+    Returns
+    -------
+    the value of the potential at locations x,y with the given params
+    """
+
+    kx, ky, x0, y0 = params
+    return kx * (x-x0) ** 2  / 2 + ky * (y-y0) ** 2 / 2
+
+
+def quadratic_2D_well_force(x, y, params):
+    """
+    see even_parity_1D_well function documentation
+    """
+
+    kx, ky, x0, y0 = params
+    dx = 2 * kx * (x-x0)
+    dy = 2 * ky * (y-y0)
+    return [-dx, -dy]
+
+
+quadratic_2D_well_defaults = [1., 1., 0., 0.]
+quadratic_2D_well = Potential(quadratic_2D_well, quadratic_2D_well_force, 4, 2, default_params=quadratic_2D_well_defaults)
+
 
 def exp_well_3D(x, y, z, depth, localization, x0, y0, z0):
     '''
